@@ -1,0 +1,49 @@
+# ==================================================
+# .gitignore pour Projet solar_duration (C Language Project)
+# ==================================================
+
+# --------------------------------------------------
+# 🛑 Fichiers générés par la compilation (Build Artifacts)
+# --------------------------------------------------
+# L'exécutable généré par 'make'
+solar_duration
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# Fichiers de logs et de sortie
+solar_duration.log
+*.log
+lint_report.txt
+cppcheck_report.txt
+
+# --------------------------------------------------
+# 🗑️ Fichiers temporaires et de développement
+# --------------------------------------------------
+# Fichiers de sauvegarde ou de configuration locaux
+*.swp
+*~
+
+# Fichiers de configuration spécifiques à l'utilisateur ou au système
+.DS_Store  # Fichiers de macOS
+.idea/     # Fichiers de configuration de JetBrains IDEs (ex: CLion)
+*.orig     # Fichiers de sauvegarde automatiques de certains éditeurs
+
+# --------------------------------------------------
+# 🛠️ Dépendances et Environnement (Si vous utilisiez un système de build avancé)
+# --------------------------------------------------
+# Bien que votre Makefile soit simple, il est bon de garder ceci par précaution
+# Si vous utilisiez CMake ou Makefiles complexes, ils pourraient générer des dossiers de build ici.
+build/
+bin/
+obj/
+
+# --------------------------------------------------
+# 📜 Fichiers de licence et documentation
+# --------------------------------------------------
+# Si vous avez un fichier LICENSE, vous ne voulez PAS le mettre dans .gitignore, 
+# mais si vous avez une copie locale de la licence que vous ne voulez pas versionner, ajoutez-la ici.
+# LICENSE
+# README.md # (N'ajoutez PAS votre README.md ici, il est destiné à être versionné !)

@@ -1,0 +1,12 @@
+Checks: >
+  # Fondamentaux C (bugs, performances, portabilité)
+  bugprone-*
+  performance-*
+  portability-*
+  # Sécurité C (très important pour le C)
+  clang-analyzer-security.ArrayBound
+  clang-analyzer-security.PointerRedundancy
+  # Quelques checks de base de lisibilité
+  readability-magic-numbers
+  readability-function-size
+
