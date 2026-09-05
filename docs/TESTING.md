@@ -33,7 +33,7 @@ make test
 
 **Résultats attendus** :
 ```
-19 tests, 0 failures
+22 tests, 0 failures
 ```
 
 ---

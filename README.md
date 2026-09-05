@@ -42,7 +42,7 @@ La force de ce projet réside dans sa modularité. Chaque fichier est responsabl
     *   **Déclinaison Solaire ($\delta$)**: Il implémente plusieurs modèles pour calculer l'angle d'inclinaison du Soleil par rapport à l'équateur terrestre pour un jour donné :
         *   **Sinusoïdal (Mode 1)**: Calibré, approximation cyclique simple (~±1.5° d'erreur).
         *   **Spencer (Mode 2)**: Calibré, modèle trigonométrique précis (~±0.0006 rad). **[FONCTIONNEL]**
-        *   **Meeus (Mode 3)**: Modèle avancé. **[À implémenter]** (voir `docs/IMPROVEMENTS.md` pour détails).
+        *   **Meeus (Mode 3)**: Modèle astronomique basé sur la longitude solaire apparente. **[FONCTIONNEL]**
     *   **Durée du Jour**: Utilise la déclinaison et la latitude dans des formules trigonométriques (basées sur $\omega$, l'angle horaire) pour déterminer la durée du jour en heures.
 *   **`src/simulation.c` / `include/simulation.h`**: **Le Moteur de Boucle**. Ce module est le chef d'orchestre des calculs. Il prend la configuration valide et itère jour après jour (en utilisant `advance_day` de `src/date.c`) pour exécuter `process_day` pour chaque date de début à date de fin.
 
@@ -74,7 +74,7 @@ Le système est piloté via le `Makefile`.
 | :--- | :--- | :--- |
 | `make run` | **Exécution standard.** Compile puis exécute le programme. | Les résultats de chaque jour sont affichés directement dans la console. |
 | `make run_log` | **Exécution journalisée (Recommandé).** Compile et exécute, redirigeant *toutes* les sorties (logs, erreurs) vers le fichier spécifié. | Un fichier **`solar_duration.log`** est créé, contenant l'historique complet du processus. |
-| `make test` | **Tests unitaires.** Compile et exécute `solar_duration_tests`. | 19 tests C exécutés sans modifier les configurations. |
+| `make test` | **Tests unitaires.** Compile et exécute `solar_duration_tests`. | 22 tests C exécutés sans modifier les configurations. |
 | `make clean` | **Maintenance.** Supprime l'exécutable, les objets temporaires, et **efface le journal de simulation** (`solar_duration.log`). | Le système revient à un état initial propre. |
 
 ### **Phase 3 : Assurance Qualité (DevOps)**
@@ -111,20 +111,18 @@ Le système est conçu pour ne jamais planter sans avertissement. Si une erreur 
 - Lecture et validation de configuration
 - Conversions calendaires (date ↔ ordinal)
 - Parsing de coordonnées géographiques (degrés/minutes/secondes)
-- Calcul de déclinaison solaire (modes Sinusoïdal & Spencer)
+- Calcul de déclinaison solaire (modes Sinusoïdal, Spencer & Meeus)
 - Simulation jour par jour avec logging multi-niveaux
 - Assurance qualité (linting, formatting, static analysis)
 
 ⏳ **Fonctionnalités Partielles/Incomplètes** :
-- **Mode Meeus** (`mode_solaire = 3`) : Fonction stub retourne 0.0, non implémentée (voir `docs/IMPROVEMENTS.md`)
 - **Support multi-années** : Les dates doivent actuellement être sur la même année calendaire
 
 🐛 **Bugs connus et limites** :
 Les correctifs de validation et de parsing des priorités haute et moyenne sont
 implémentés et couverts par `make test`. Les principales limites restantes sont :
-1. Le modèle Meeus (`mode_solaire = 3`) est encore un stub.
-2. Les dates de début et de fin sont limitées à la même année.
-3. La simulation ne propose pas encore de sortie CSV ou JSON.
+1. Les dates de début et de fin sont limitées à la même année.
+2. La simulation ne propose pas encore de sortie CSV ou JSON.
 
 ⚠️ **Limitations par Conception** :
 - Plage de dates : Même année calendaire (2026/08/21 → 2026/08/21, pas 2026/12 → 2027/01)

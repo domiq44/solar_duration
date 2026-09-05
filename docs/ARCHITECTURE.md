@@ -176,7 +176,7 @@ double calculate_sinusoidal_declination(int jour_n, int annee);
 // Calcul déclinaison solaire (mode Spencer - recommandé)
 double calculate_spencer_declination(int jour_n, int annee);
 
-// Calcul déclinaison solaire (mode Meeus - NOT IMPLEMENTED)
+// Calcul déclinaison solaire (mode Meeus)
 double calculate_meeus_declination(int jour_n, int annee);
 
 // Calcul durée du jour (heures) en fonction latitude et déclinaison

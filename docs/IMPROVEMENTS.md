@@ -201,11 +201,13 @@
 ## 🟢 PRIORITÉ BASSE - Nice-to-Have & Optimisations
 
 ### 10. Fonctionnalité: Implémentation Mode Meeus
+**Status** : ✅ COMPLETED
 - **Fichier** : `src/solar.c:102`
-- **Problème** : `calculate_meeus_declination()` retourne un stub (0.0)
+- **Résolution** : `calculate_meeus_declination()` utilise l'approximation Meeus
+  avec date julienne, longitude solaire apparente et obliquité corrigée.
 - **Impact** : 🟢 Bas - Fonctionnalité optionnelle non disponible
 - **Effort** : 🟠 Complex (1-2h)
-- **Solution** : Implémenter formule Meeus-Berger avec coefficients astronomiques
+- **Validation** : 3 tests unitaires couvrent équinoxe et solstices ; `make test` ✓
 - **Référence** : "Astronomical Algorithms" by Jean Meeus
 - **Coefficient clés** :
   ```

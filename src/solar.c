@@ -98,9 +98,62 @@ double calculate_spencer_declination(int jour_n, int annee) {
 // FONCTION DE DECLINAISON SOLAIRE (MODELE MEEUS CALIBRE)
 // ==========================================================================
 
+static double julian_day(int jour, int mois, int annee) {
+  int adjusted_year = annee;
+  int adjusted_month = mois;
+
+  if (adjusted_month <= 2) {
+  adjusted_year--;
+  adjusted_month += 12;
+  }
+
+  int century = adjusted_year / 100;
+  int calendar_correction = 2 - century + century / 4;
+
+  return floor(365.25 * (adjusted_year + 4716)) +
+     floor(30.6001 * (adjusted_month + 1)) + jour +
+     calendar_correction - 1524.5 + 0.5;
+}
+
+/**
+ * @brief Calcule la déclinaison solaire selon l'approximation Meeus.
+ * @param jour_n Jour ordinal de l'année (1 à 365 ou 366).
+ * @param annee Année civile grégorienne.
+ * @return Déclinaison solaire en degrés.
+ */
 double calculate_meeus_declination(int jour_n, int annee) {
-  // TODO Doit être implémenté !
-  return 0.0;
+  double julian_date = julian_day(1, 1, annee) + jour_n - 1;
+  double centuries = (julian_date - 2451545.0) / 36525.0;
+
+  double mean_longitude =
+    fmod(280.46646 + 36000.76983 * centuries +
+         0.0003032 * centuries * centuries,
+       360.0);
+  double mean_anomaly =
+    fmod(357.52911 + 35999.05029 * centuries -
+         0.0001537 * centuries * centuries,
+       360.0) *
+    M_PI / 180.0;
+
+  double equation_of_center =
+    (1.914602 - 0.004817 * centuries - 0.000014 * centuries * centuries) *
+      sin(mean_anomaly) +
+    (0.019993 - 0.000101 * centuries) * sin(2.0 * mean_anomaly) +
+    0.000289 * sin(3.0 * mean_anomaly);
+
+  double true_longitude = mean_longitude + equation_of_center;
+  double omega = (125.04 - 1934.136 * centuries) * M_PI / 180.0;
+  double apparent_longitude =
+    (true_longitude - 0.00569 - 0.00478 * sin(omega)) * M_PI / 180.0;
+
+  double mean_obliquity =
+    23.43929111 - 0.013004167 * centuries -
+    0.000000164 * centuries * centuries +
+    0.000000504 * centuries * centuries * centuries;
+  double obliquity =
+    (mean_obliquity + 0.00256 * cos(omega)) * M_PI / 180.0;
+
+  return asin(sin(obliquity) * sin(apparent_longitude)) * 180.0 / M_PI;
 }
 
 // ==========================================================================

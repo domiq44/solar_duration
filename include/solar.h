@@ -11,7 +11,7 @@ typedef double (*DeclinationFunc)(int jour_n, int annee);
 double calculate_declination(int jour_n, int annee, int mode);
 double calculate_day_duration(double delta_deg, double latitude_deg);
 
-// Exposer les fonctions statiques pour le binding
+// Exposer les fonctions de calcul pour le binding
 double calculate_sinusoidal_declination(int jour_n, int annee);
 double calculate_spencer_declination(int jour_n, int annee);
 double calculate_meeus_declination(int jour_n, int annee);

@@ -104,11 +104,25 @@ static void test_formatting(void) {
         "latitude formatting produces the expected representation");
 }
 
+static void test_meeus_declination(void) {
+  double spring_equinox = calculate_meeus_declination(80, 2026);
+  double summer_solstice = calculate_meeus_declination(172, 2026);
+  double winter_solstice = calculate_meeus_declination(355, 2026);
+
+  check(fabs(spring_equinox) < 1.0,
+        "Meeus declination is near zero at the spring equinox");
+  check(summer_solstice > 22.0 && summer_solstice < 24.5,
+        "Meeus declination is near the summer solstice maximum");
+  check(winter_solstice < -22.0 && winter_solstice > -24.5,
+        "Meeus declination is near the winter solstice minimum");
+}
+
 int main(void) {
   test_latitude_parsing();
   test_dates();
   test_configuration_validation();
   test_formatting();
+  test_meeus_declination();
 
   printf("\n%d tests, %d failures\n", tests_run, tests_failed);
   return tests_failed == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
