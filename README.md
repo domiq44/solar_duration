@@ -20,7 +20,7 @@ La force de ce projet réside dans sa modularité. Chaque fichier est responsabl
 *   **`config.h`**: **Le Catalogue de Paramètres**. Définit les constantes fondamentales du système (ex: `MIN_YEAR`, `MAX_YEAR`, `MODE_SINUSOIDAL`). Il sert de référentiel unique pour toutes les limites de validation.
 *   **`string_utils.c/h`**: **La Boîte à Outils de Chaînes**. Fournit des fonctions utilitaires génériques, principalement `strtrim()`, essentielle pour nettoyer les entrées de configuration en supprimant les espaces superflus.
 *   **`logger.c/h`**: **Le Journaliste de Bord Configurable**. Ce module gère toute la sortie informative.
-    *   **Mécanisme :** Il lit son niveau de verbosité depuis un fichier de configuration (`logger.cfg` par défaut).
+    *   **Mécanisme :** Il lit son niveau de verbosité depuis un fichier de configuration (`solar_duration.cfg` par défaut).
     *   **Fonctionnalité :** Il permet de basculer entre `DEBUG` (très verbeux, pour le débogage), `INFO` (flux de travail normal), `WARN`, `ERROR` et `CRITICAL`.
     *   **Robustesse :** L'initialisation est configurable (`logger_init(NULL)` pour le défaut).
 
@@ -37,9 +37,9 @@ La force de ce projet réside dans sa modularité. Chaque fichier est responsabl
 ### ⚛️ Modules Scientifiques et de Simulation
 *   **`solar.c/h`**: **Le Moteur Physique Astronomique**. C'est le cœur mathématique du projet.
     *   **Déclinaison Solaire ($\delta$)**: Il implémente plusieurs modèles pour calculer l'angle d'inclinaison du Soleil par rapport à l'équateur terrestre pour un jour donné :
-        *   **Sinusoïdal (Calibré)**: Une approximation cyclique simple.
-        *   **Spencer (Calibré)**: Un modèle trigonométrique plus précis.
-        *   **Meeus (À implémenter)**: Un modèle plus avancé.
+        *   **Sinusoïdal (Mode 1)**: Calibré, approximation cyclique simple (~±1.5° d'erreur).
+        *   **Spencer (Mode 2)**: Calibré, modèle trigonométrique précis (~±0.0006 rad). **[FONCTIONNEL]**
+        *   **Meeus (Mode 3)**: Modèle avancé. **[À implémenter]** (voir `IMPROVEMENTS.md` pour détails).
     *   **Durée du Jour**: Utilise la déclinaison et la latitude dans des formules trigonométriques (basées sur $\omega$, l'angle horaire) pour déterminer la durée du jour en heures.
 *   **`simulation.c/h`**: **Le Moteur de Boucle**. Ce module est le chef d'orchestre des calculs. Il prend la configuration valide et itère jour après jour (en utilisant `advance_day` de `date.c`) pour exécuter `process_day` pour chaque date de début à date de fin.
 
@@ -99,8 +99,52 @@ Le système est conçu pour ne jamais planter sans avertissement. Si une erreur 
 
 ---
 
+## 📊 État du Projet et Limitations Connues
+
+### **État Actuel (2026-09-05)**
+
+✅ **Fonctionnalités Complètes** :
+- Lecture et validation de configuration
+- Conversions calendaires (date ↔ ordinal)
+- Parsing de coordonnées géographiques (degrés/minutes/secondes)
+- Calcul de déclinaison solaire (modes Sinusoïdal & Spencer)
+- Simulation jour par jour avec logging multi-niveaux
+- Assurance qualité (linting, formatting, static analysis)
+
+⏳ **Fonctionnalités Partielles/Incomplètes** :
+- **Mode Meeus** (`mode_solaire = 3`) : Fonction stub retourne 0.0, non implémentée (voir `IMPROVEMENTS.md`)
+- **Support multi-années** : Les dates doivent actuellement être sur la même année calendaire
+
+🐛 **Bugs Connus** :
+Voir le document `IMPROVEMENTS.md` pour liste détaillée. Les plus critiques :
+1. Validation latitude accepte degrés > 180 (devrait être > 90)
+2. Comptage de paramètres configuration cassé (ne détecte pas champs manquants)
+3. Pointeur fonction déclinaison non vérifié (NULL check manquant)
+
+⚠️ **Limitations par Conception** :
+- Plage de dates : Même année calendaire (2026/08/21 → 2026/08/21, pas 2026/12 → 2027/01)
+- Latitude : [-90°, 90°] strictement
+- Année : [1900, 3000]
+- Format latitude : Degrés/minutes/secondes uniquement (pas de degrés décimaux directs)
+
+### **Roadmap de Correction**
+
+Consultez `IMPROVEMENTS.md` pour :
+- Liste complète des 24+ opportunités d'amélioration
+- Priorisation (Haute/Moyenne/Basse)
+- Effort estimé pour chaque correction
+- Plan d'implémentation par phases
+
+---
+
 ## 🤝 Contribution et Licence
 
 **Licence :** Ce projet est distribué sous licence MIT. Les termes de cette licence sont rédigés dans le fichier `LICENSE` (si présent) ou sous-entendus par l'utilisation.
 
-**Contribuer :** Nous encourageons vivement les contributions ! Si vous trouvez un bug, si vous avez une idée pour ajouter un modèle solaire plus précis (comme Meeus), ou si vous souhaitez améliorer la lisibilité, n'hésitez pas à soumettre une *Pull Request*.
+**Contribuer :** Nous encourageons vivement les contributions ! Avant de commencer :
+1. Consultez `IMPROVEMENTS.md` pour connaître les priorités
+2. Exécutez `make lint` et `make cppcheck` avant tout commit
+3. Ajoutez des tests pour nouvelles fonctionnalités
+4. Documentez les changements dans les commentaires de code
+
+Priorités actuelles : Correctifs critiques (bugs #1-3), puis refactoring qualité.
