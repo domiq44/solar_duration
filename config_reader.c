@@ -112,40 +112,42 @@ int read_raw_data(const char *filename, RawConfig *raw) {
     }
 
     // Stockage basé sur le paramètre trouvé
-    if (strcasecmp(param, "annee") == 0) {
-      free(raw->raw_annee_str);
-      raw->raw_annee_str = new_str;
-      success_count = 1;
-    } else if (strcasecmp(param, "latitude") == 0) {
-      free(raw->raw_latitude_str);
-      raw->raw_latitude_str = new_str;
-      success_count = 1;
-    } else if (strcasecmp(param, "jour_debut") == 0) {
-      free(raw->raw_jour_debut_str);
-      raw->raw_jour_debut_str = new_str;
-      success_count = 1;
-    } else if (strcasecmp(param, "mois_debut") == 0) {
-      free(raw->raw_mois_debut_str);
-      raw->raw_mois_debut_str = new_str;
-      success_count = 1;
-    } else if (strcasecmp(param, "jour_fin") == 0) {
-      free(raw->raw_jour_fin_str);
-      raw->raw_jour_fin_str = new_str;
-      success_count = 1;
-    } else if (strcasecmp(param, "mois_fin") == 0) {
-      free(raw->raw_mois_fin_str);
-      raw->raw_mois_fin_str = new_str;
-      success_count = 1;
-    } else if (strcasecmp(param, "mode_solaire") == 0) {
-      free(raw->raw_mode_solaire_str);
-      raw->raw_mode_solaire_str = new_str;
-      success_count = 1;
+  // Lookup table pour mappage paramètre → champ RawConfig
+  typedef struct {
+    const char *key;
+    char **target_field;
+  } ParamMapping;
+
+  ParamMapping mappings[] = {
+      {"annee", &raw->raw_annee_str},
+      {"latitude", &raw->raw_latitude_str},
+      {"jour_debut", &raw->raw_jour_debut_str},
+      {"mois_debut", &raw->raw_mois_debut_str},
+      {"jour_fin", &raw->raw_jour_fin_str},
+      {"mois_fin", &raw->raw_mois_fin_str},
+      {"mode_solaire", &raw->raw_mode_solaire_str},
+      {NULL, NULL}  // Sentinelle
+  };
+
+  // Parcourir la lookup table
+  for (int i = 0; mappings[i].key != NULL; i++) {
+    if (strcasecmp(param, mappings[i].key) == 0) {
+      free(*mappings[i].target_field);
+      *mappings[i].target_field = new_str;
+      success_count++;
+      break;
     }
+  }
   }
 
   fclose(f);
 
-  if (success_count == 0) {
+  // Vérifier que tous les 7 paramètres obligatoires ont été trouvés
+  if (success_count != 7) {
+    log_error("Configuration incomplète: %d/7 paramètres trouvés. "
+              "Paramètres requis: annee, latitude, jour_debut, mois_debut, "
+              "jour_fin, mois_fin, mode_solaire",
+              success_count);
     return READ_ERROR_DATA_MISSING;
   }
   return READ_SUCCESS;

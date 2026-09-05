@@ -36,6 +36,19 @@ static void initialize_config_functions(FinalConfig *final) {
   }
 }
 
+/**
+ * @brief Vérifie que deux dates sont ordonnées temporellement (d1 <= d2).
+ * @param jour_debut, mois_debut, annee_debut : Première date
+ * @param jour_fin, mois_fin, annee_fin : Deuxième date
+ * @return bool true si d1 <= d2, false sinon
+ */
+static bool are_dates_ordered(int jour_debut, int mois_debut, int annee_debut,
+                              int jour_fin, int mois_fin, int annee_fin) {
+  int ordinal_debut = date_to_ordinal(jour_debut, mois_debut, annee_debut);
+  int ordinal_fin = date_to_ordinal(jour_fin, mois_fin, annee_fin);
+  return ordinal_debut <= ordinal_fin;
+}
+
 // ==========================================================================
 // CONVERSION ET VALIDATION (RawConfig -> FinalConfig)
 // ==========================================================================
@@ -102,7 +115,7 @@ int parse_and_validate_config(const RawConfig *raw, FinalConfig *final) {
   // 4. Conversion du Mode Solaire
   long temp_mode = strtol(raw->raw_mode_solaire_str, &endptr, 10);
   if (endptr == raw->raw_mode_solaire_str || *endptr != '\0') {
-    fprintf(stderr, "ERREUR DE CONVERSION: 'mode_solaire' invalide.\n");
+    log_error("ERREUR DE CONVERSION: 'mode_solaire' invalide.");
     return READ_ERROR_DATA_CONVERSION;
   }
   if (temp_mode < MODE_SINUSOIDAL || temp_mode > MODE_MEEUS) {
@@ -150,12 +163,12 @@ bool is_config_fully_valid(const FinalConfig *final) {
   }
 
   // 4. Validation temporelle (Début doit être avant ou égal à Fin)
-  int ordinal_debut =
-      date_to_ordinal(final->jour_debut, final->mois_debut, final->annee);
-  int ordinal_fin =
-      date_to_ordinal(final->jour_fin, final->mois_fin, final->annee);
-
-  if (ordinal_debut > ordinal_fin) {
+  if (!are_dates_ordered(final->jour_debut, final->mois_debut, final->annee,
+                         final->jour_fin, final->mois_fin, final->annee)) {
+    int ordinal_debut =
+        date_to_ordinal(final->jour_debut, final->mois_debut, final->annee);
+    int ordinal_fin =
+        date_to_ordinal(final->jour_fin, final->mois_fin, final->annee);
     log_error("ERREUR DE DONNÉES: La date de début (%d) est postérieure à la "
               "date de fin (%d).",
               ordinal_debut, ordinal_fin);
@@ -166,6 +179,14 @@ bool is_config_fully_valid(const FinalConfig *final) {
   if (final->mode_declinaison < MODE_SINUSOIDAL ||
       final->mode_declinaison > MODE_MEEUS) {
     log_error("ERREUR DE DONNÉES: Mode de déclinaison hors plage valide.");
+    return false;
+  }
+
+  // 6. Validation du pointeur fonction déclinaison
+  if (final->declination_func == NULL) {
+    log_error("ERREUR INTERNE: Pointeur de fonction déclinaison non initialisé. "
+              "Mode de déclinaison: %d",
+              final->mode_declinaison);
     return false;
   }
 

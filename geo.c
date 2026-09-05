@@ -82,7 +82,8 @@ static bool extract_direction_and_coords(const char *ligne, char *direction,
  * sinon.
  */
 int parse_latitude_string(const char *ligne, double *result) {
-  int degrees = 0, minutes = 0, seconds = 0;
+  int degrees = 0, minutes = 0;
+  double seconds = 0.0;
   char direction = ' ';
   char coord_part[MAX_BUF_SIZE];
 
@@ -97,9 +98,9 @@ int parse_latitude_string(const char *ligne, double *result) {
   }
 
   // --- 2. Parsing des composantes numériques ---
-  // Format attendu : "XX deg YY min ZZ sec"
+  // Format attendu : "XX deg YY min ZZ.ZZ sec" (secondes peuvent être décimales)
   int ret_sscanf =
-      sscanf(coord_part, "%d deg %d min %d sec", &degrees, &minutes, &seconds);
+      sscanf(coord_part, "%d deg %d min %lf sec", &degrees, &minutes, &seconds);
 
   if (ret_sscanf != 3) {
     log_debug("sscanf a échoué pour la partie '%s'. Retours: %d", coord_part,
@@ -108,10 +109,10 @@ int parse_latitude_string(const char *ligne, double *result) {
   }
 
   // --- 3. Vérifications INTERNES des composantes (Logique de formatage) ---
-  if (degrees < 0 || degrees > 180 || minutes < 0 || minutes >= 60 ||
+  if (degrees < 0 || degrees > 90 || minutes < 0 || minutes >= 60 ||
       seconds < 0 || seconds >= 60) {
     log_error("Composantes de coordonnées hors plage de format (Deg: %d, Min: "
-              "%d, Sec: %d) trouvées dans '%s'.",
+              "%d, Sec: %.2lf) trouvées dans '%s'.",
               degrees, minutes, seconds, coord_part);
     return ERR_CONVERSION; // Échec de validation interne du format
   }

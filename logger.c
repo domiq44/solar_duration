@@ -102,28 +102,32 @@ static bool load_log_level_from_config(const char *filename) {
       *eq = '\0';
       const char *val_str = strtrim(eq + 1);
 
-      // --- Comparaison de chaînes ---
-      if (strcmp(val_str, "DEBUG") == 0) {
-        loaded_level = LOG_DEBUG;
-        found = 1;
-        break;
-      } else if (strcmp(val_str, "INFO") == 0) {
-        loaded_level = LOG_INFO;
-        found = 1;
-        break;
-      } else if (strcmp(val_str, "WARN") == 0) {
-        loaded_level = LOG_WARN;
-        found = 1;
-        break;
-      } else if (strcmp(val_str, "ERROR") == 0) {
-        loaded_level = LOG_ERROR;
-        found = 1;
-        break;
-      } else if (strcmp(val_str, "CRITICAL") == 0) {
-        loaded_level = LOG_CRITICAL;
-        found = 1;
-        break;
+      // Lookup table pour string → log level conversion
+      typedef struct {
+        const char *name;
+        LogLevel level;
+      } LevelMapping;
+
+      LevelMapping levels[] = {
+          {"DEBUG", LOG_DEBUG},
+          {"INFO", LOG_INFO},
+          {"WARN", LOG_WARN},
+          {"ERROR", LOG_ERROR},
+          {"CRITICAL", LOG_CRITICAL},
+          {NULL, LOG_INFO}  // Sentinelle avec valeur par défaut
+      };
+
+      // Parcourir la lookup table
+      for (int i = 0; levels[i].name != NULL; i++) {
+        if (strcmp(val_str, levels[i].name) == 0) {
+          loaded_level = levels[i].level;
+          found = 1;
+          break;
+        }
       }
+
+      if (found)
+        break;  // Sortir de la boucle fgets
     }
   }
 

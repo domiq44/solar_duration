@@ -121,6 +121,7 @@ static int run_application(const char *config_filename) {
   // Pré-calcul de la chaîne de latitude formatée (une seule fois)
   char lat_str[50];
   format_latitude(final.latitude, lat_str, sizeof(lat_str));
+  log_info("Latitude cible: %s", lat_str);
 
   // --- 6. EXÉCUTION DE LA SIMULATION ---
   log_info("Démarrage de l'itération de la simulation...");

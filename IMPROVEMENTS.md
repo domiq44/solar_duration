@@ -103,11 +103,6 @@
   ```
 
 ### 6. Refactoring: Duplication Parsing Paramètres
-- **Fichier** : `config_reader.c:119-140`
-- **Problème** : 7 blocs `strcasecmp()` quasi-identiques
-- **Impact** : 🟡 Moyen - Maintenabilité, risque de bugs lors modifications
-- **Effort** : 🟠 Medium (20-30 min)
-- **Solution** : Lookup table
   ```c
   struct {
     const char *key;
@@ -125,7 +120,9 @@
     }
   }
   ```
-- **Bénéfice** : ~14 lignes éliminées, plus maintenable
+ **Status** : ✅ COMPLETED (Phase 2 - Refactoring)
+ **Bénéfice** : ~22 lignes → ~8 lignes, maintenabilité ++
+ **Validation** : ./run_tests.sh ✓, ./test_medium_fixes.sh ✓
 
 ### 7. Perte de Précision: Secondes Fractionnaires
 - **Fichier** : `geo.c:93`
@@ -148,6 +145,32 @@
 - **Impact** : 🟡 Bas - Duplication mineure mais éliminable
 - **Effort** : ⚡ Quick (15 min)
 - **Solution** : Lookup table similaire à paramètres config
+**Status** : ✅ COMPLETED (Phase 2 - Refactoring)
+**Changes** :
+  ```c
+  typedef struct {
+    const char *name;
+    LogLevel level;
+  } LevelMapping;
+  
+  LevelMapping levels[] = {
+    {"DEBUG", LOG_DEBUG},
+    {"INFO", LOG_INFO},
+    {"WARN", LOG_WARN},
+    {"ERROR", LOG_ERROR},
+    {"CRITICAL", LOG_CRITICAL},
+    {NULL, LOG_INFO}
+  };
+  
+  for (int i = 0; levels[i].name != NULL; i++) {
+    if (strcmp(val_str, levels[i].name) == 0) {
+      loaded_level = levels[i].level;
+      break;
+    }
+  }
+  ```
+**Bénéfice** : ~15 lignes → ~10 lignes, scalabilité améliorée
+**Validation** : ./run_tests.sh ✓, compilation lint ✓
 
 ### 9. Refactoring: Date Range Validation
 - **Fichier** : `config_validator.c:140-154`
@@ -159,6 +182,13 @@
   bool are_dates_ordered(int y, int m1, int d1, int m2, int d2) {
     return date_to_ordinal(y, m1, d1) <= date_to_ordinal(y, m2, d2);
   }
+  ```
+**Status** : ✅ COMPLETED (Phase 2 - Refactoring)
+**Implementation** :
+  - Created static function `are_dates_ordered()` in config_validator.c
+  - Refactored date validation to use helper
+  - Reduced code duplication: 3 `date_to_ordinal()` calls → 1 in helper
+**Validation** : ./run_tests.sh ✓, ./test_medium_fixes.sh ✓, lint ✓
   ```
 
 ---
@@ -292,6 +322,8 @@
 Appliquer immédiatement, mergeables sans regrets.
 
 ```
+**Status** : ✅ COMPLETED (Phase 2 - Quick Fix)
+**Validation** : test_medium_fixes.sh Test 3 ✓ - "47 deg 17 min 48.5 sec Nord" parsed correctly
 ✓ Latitude validation: > 90 (bug #1)
 ✓ Parameter counting: valider 7 champs (bug #2)
 ✓ Declination NULL check (bug #3)
@@ -393,6 +425,25 @@ make run_log 2>&1 | grep -i "latitude.*47"
 
 ---
 
+## � Bonnes Pratiques de Testing
+
+### Fichiers de Configuration
+
+⚠️ **Important** : Les fichiers de configuration originaux contiennent des éléments d'UX essentiels :
+- **Commentaires** : Documentation inline sur format/valeurs acceptées
+- **Lignes vides** : Organisation visuelle en sections logiques
+
+**À FAIRE** : Créer des fichiers de test séparés pour chaque scénario
+```bash
+test_invalid_latitude.dat    # Pour tester latitude > 90°
+test_missing_param.dat       # Pour tester paramètre manquant
+test_invalid_mode.dat        # Pour tester mode invalide
+```
+
+**À NE PAS FAIRE** : Écraser les fichiers originaux (`solar_duration.dat`, `solar_duration.cfg`)
+
+---
+
 ## 🤝 Checklist pour Contributeurs
 
 Avant soumission d'une amélioration :
@@ -400,7 +451,8 @@ Avant soumission d'une amélioration :
 - [ ] Code passe `make lint` sans erreurs
 - [ ] Code passe `make cppcheck` sans warnings
 - [ ] Code formaté avec `make format`
-- [ ] Tests ajoutés si applicable
+- [ ] Tests ajoutés si applicable (fichiers de test séparés)
+- [ ] Fichiers de config originaux **non modifiés** (leur format aide l'utilisateur)
 - [ ] Documentation mise à jour (code comments + README)
 - [ ] Aucun changement de comportement non-intentionnel
 - [ ] Commit message décrit POURQUOI pas juste QUOI
