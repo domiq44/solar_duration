@@ -6,6 +6,7 @@ set -e
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
+failures=0
 
 echo "=========================================="
 echo "Solar Duration Project - Test Suite"
@@ -29,6 +30,7 @@ if echo "$OUTPUT" | grep -q "hors plage de format"; then
     echo "   ✓ PASS: Latitude correctly rejected"
 else
     echo "   ✗ FAIL: Latitude should be rejected"
+    failures=$((failures + 1))
 fi
 cp solar_duration.dat.bak solar_duration.dat
 rm solar_duration.dat.bak
@@ -43,6 +45,7 @@ if echo "$OUTPUT" | grep -q "Configuration incomplète.*6/7"; then
     echo "   ✓ PASS: Missing parameter correctly detected"
 else
     echo "   ✗ FAIL: Missing parameter should be detected"
+    failures=$((failures + 1))
 fi
 cp solar_duration.dat.bak solar_duration.dat
 rm solar_duration.dat.bak
@@ -56,6 +59,7 @@ if echo "$OUTPUT" | grep -q "n'est pas reconnu"; then
     echo "   ✓ PASS: Invalid mode correctly rejected"
 else
     echo "   ✗ FAIL: Invalid mode should be rejected"
+    failures=$((failures + 1))
 fi
 cp test_invalid_latitude.dat solar_duration.dat 2>/dev/null || true
 echo ""
@@ -81,17 +85,33 @@ if echo "$OUTPUT" | grep -q "SIMULATION TERMINÉE AVEC SUCCÈS"; then
     echo "   ✓ PASS: Valid configuration runs successfully"
 else
     echo "   ✗ FAIL: Valid configuration should run successfully"
+    failures=$((failures + 1))
 fi
 echo ""
 
 # Test 5: Code quality checks
 echo "📋 Test 5: Code quality checks"
 echo "   Running: make lint"
-make lint >/dev/null 2>&1 && echo "   ✓ PASS: Lint check successful" || echo "   ✗ FAIL: Lint errors found"
+if make lint >/dev/null 2>&1; then
+    echo "   ✓ PASS: Lint check successful"
+else
+    echo "   ✗ FAIL: Lint errors found"
+    failures=$((failures + 1))
+fi
 echo "   Running: make cppcheck"
-make cppcheck >/dev/null 2>&1 && echo "   ✓ PASS: cppcheck successful" || echo "   ✗ FAIL: cppcheck errors found"
+if make cppcheck >/dev/null 2>&1; then
+    echo "   ✓ PASS: cppcheck successful"
+else
+    echo "   ✗ FAIL: cppcheck errors found"
+    failures=$((failures + 1))
+fi
 echo ""
 
 echo "=========================================="
 echo "✓ Test suite completed"
 echo "=========================================="
+
+if [[ $failures -ne 0 ]]; then
+    echo "✗ $failures test(s) failed"
+    exit 1
+fi

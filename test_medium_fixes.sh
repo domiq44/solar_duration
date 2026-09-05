@@ -6,6 +6,7 @@ set -e
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
+failures=0
 
 echo "=========================================="
 echo "Medium Priority Fixes - Test Suite"
@@ -21,6 +22,7 @@ if echo "$OUTPUT" | grep -q "Latitude cible:"; then
     echo "$OUTPUT" | grep "Latitude cible:"
 else
     echo "   ✗ FAIL: Latitude cible should be displayed"
+    failures=$((failures + 1))
 fi
 echo ""
 
@@ -44,6 +46,7 @@ if echo "$OUTPUT" | grep -q "\[ERROR\]"; then
     echo "   ✓ PASS: Error is logged via log system"
 else
     echo "   ✗ FAIL: Error should be logged"
+    failures=$((failures + 1))
 fi
 cp solar_duration.dat.bak solar_duration.dat
 rm solar_duration.dat.bak test_bad_mode.dat
@@ -70,6 +73,7 @@ if echo "$OUTPUT" | grep -q "SIMULATION TERMINÉE"; then
     echo "   Parsed latitude: $(echo "$OUTPUT" | grep "Latitude parsée" | head -1)"
 else
     echo "   ✗ FAIL: Fractional seconds should be accepted"
+    failures=$((failures + 1))
 fi
 cp solar_duration.dat.bak solar_duration.dat
 rm solar_duration.dat.bak test_fractional_seconds.dat
@@ -93,3 +97,8 @@ EOF
 echo "=========================================="
 echo "✓ Medium priority tests completed"
 echo "=========================================="
+
+if [[ $failures -ne 0 ]]; then
+    echo "✗ $failures test(s) failed"
+    exit 1
+fi

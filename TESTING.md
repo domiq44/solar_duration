@@ -58,6 +58,18 @@ Teste les quick fixes et refactorings Phase 2.
 
 ## Comment Exécuter les Tests
 
+### Commande Recommandée
+
+La cible `make test` constitue le point d'entrée unique pour exécuter toutes les
+suites de tests :
+
+```bash
+make test
+```
+
+Elle lance successivement les tests de haute priorité et les tests de priorité
+moyenne. La commande s'arrête dès qu'une suite échoue.
+
 ### Option 1 : Tests Rapides
 ```bash
 # Test haute priorité uniquement

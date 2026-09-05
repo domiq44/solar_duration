@@ -17,6 +17,8 @@ CC = gcc
 CFLAGS = -Wall -O2 -pedantic
 LDFLAGS = -lm
 
+.PHONY: run run_log test clean format lint cppcheck help
+
 # --- Configuration des outils d'analyse statique ---
 # ... (Les flags restent inchangés) ...
 CPPCHECK_FLAGS = \
@@ -40,6 +42,10 @@ run: $(TARGET)
 
 run_log: $(TARGET)
 	./$(TARGET) > $(LOG_OUTPUT_FILE) 2>&1
+
+test: $(TARGET)
+	./run_tests.sh
+	./test_medium_fixes.sh
 
 # --- Règles de maintenance (Utilisation des variables) ---
 
@@ -67,6 +73,7 @@ help:
 	@echo "  make            : Compile le programme (crée l'exécutable '$(TARGET)')."
 	@echo "  make run        : Exécute le programme et affiche les résultats en CONSOLE."
 	@echo "  make run_log    : Exécute le programme et redirige TOUT le journal vers '$(LOG_OUTPUT_FILE)'."
+	@echo "  make test       : Compile puis exécute toutes les suites de tests."
 	@echo ""
 	@echo "🧹 MAINTENANCE & QUALITÉ :"
 	@echo "  make clean      : Supprime l'exécutable, les fichiers objets, les rapports d'analyse, ET le journal de simulation ('$(LOG_OUTPUT_FILE)')."
