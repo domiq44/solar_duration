@@ -122,7 +122,7 @@
   ```
  **Status** : ✅ COMPLETED (Phase 2 - Refactoring)
  **Bénéfice** : ~22 lignes → ~8 lignes, maintenabilité ++
- **Validation** : ./run_tests.sh ✓, ./test_medium_fixes.sh ✓
+ **Validation** : make test ✓
 
 ### 7. Perte de Précision: Secondes Fractionnaires
 - **Fichier** : `geo.c:93`
@@ -170,7 +170,7 @@
   }
   ```
 **Bénéfice** : ~15 lignes → ~10 lignes, scalabilité améliorée
-**Validation** : ./run_tests.sh ✓, compilation lint ✓
+**Validation** : make test ✓, compilation lint ✓
 
 ### 9. Refactoring: Date Range Validation
 - **Fichier** : `config_validator.c:140-154`
@@ -188,7 +188,7 @@
   - Created static function `are_dates_ordered()` in config_validator.c
   - Refactored date validation to use helper
   - Reduced code duplication: 3 `date_to_ordinal()` calls → 1 in helper
-**Validation** : ./run_tests.sh ✓, ./test_medium_fixes.sh ✓, lint ✓
+**Validation** : make test ✓, lint ✓
   ```
 
 ---
@@ -323,7 +323,7 @@ Appliquer immédiatement, mergeables sans regrets.
 
 ```
 **Status** : ✅ COMPLETED (Phase 2 - Quick Fix)
-**Validation** : test_medium_fixes.sh Test 3 ✓ - "47 deg 17 min 48.5 sec Nord" parsed correctly
+**Validation** : make test ✓ - "47 deg 17 min 48.5 sec Nord" parsed correctly
 ✓ Latitude validation: > 90 (bug #1)
 ✓ Parameter counting: valider 7 champs (bug #2)
 ✓ Declination NULL check (bug #3)
@@ -427,20 +427,19 @@ make run_log 2>&1 | grep -i "latitude.*47"
 
 ## � Bonnes Pratiques de Testing
 
-### Fichiers de Configuration
+### Tests Unitaires C
 
 ⚠️ **Important** : Les fichiers de configuration originaux contiennent des éléments d'UX essentiels :
 - **Commentaires** : Documentation inline sur format/valeurs acceptées
 - **Lignes vides** : Organisation visuelle en sections logiques
 
-**À FAIRE** : Créer des fichiers de test séparés pour chaque scénario
+Les scénarios sont regroupés dans `tests.c` et exécutés avec :
 ```bash
-test_invalid_latitude.dat    # Pour tester latitude > 90°
-test_missing_param.dat       # Pour tester paramètre manquant
-test_invalid_mode.dat        # Pour tester mode invalide
+make test
 ```
 
-**À NE PAS FAIRE** : Écraser les fichiers originaux (`solar_duration.dat`, `solar_duration.cfg`)
+Les tests unitaires construisent leurs structures en mémoire et ne modifient
+pas les fichiers originaux (`solar_duration.dat`, `solar_duration.cfg`).
 
 ---
 
@@ -451,7 +450,7 @@ Avant soumission d'une amélioration :
 - [ ] Code passe `make lint` sans erreurs
 - [ ] Code passe `make cppcheck` sans warnings
 - [ ] Code formaté avec `make format`
-- [ ] Tests ajoutés si applicable (fichiers de test séparés)
+- [ ] Tests ajoutés si applicable dans `tests.c`
 - [ ] Fichiers de config originaux **non modifiés** (leur format aide l'utilisateur)
 - [ ] Documentation mise à jour (code comments + README)
 - [ ] Aucun changement de comportement non-intentionnel

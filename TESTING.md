@@ -15,44 +15,25 @@ Ce document explique comment exécuter et écrire des tests pour le projet Solar
 
 ## Tests Existants
 
-### 1. **run_tests.sh** - Suite de Tests Haute Priorité
+### `solar_duration_tests` - Suite de tests unitaires C
 
 Teste les 5 bugs critiques et la qualité du code.
 
 ```bash
-./run_tests.sh
+make test
 ```
 
 **Couverture** :
-- ✅ Validation latitude (Bug #1) - Rejet de 120°
-- ✅ Comptage paramètres (Bug #2) - Détection incomplétude
-- ✅ Mode invalide (Bug #3) - NULL check protection
-- ✅ Configuration valide - Cas nominal
-- ✅ Qualité code - Lint & cppcheck
+- ✅ Parsing de latitude, secondes fractionnaires et hémisphère Sud
+- ✅ Validation des dates et changement d’année
+- ✅ Conversion et validation de configuration
+- ✅ Sélection du modèle de déclinaison
+- ✅ Formatage de latitude
 
 **Résultats attendus** :
 ```
-Test 1: ✓ PASS - Latitude correctly rejected
-Test 2: ✓ PASS - Missing parameter correctly detected
-Test 3: ✓ PASS - Invalid mode correctly rejected
-Test 4: ✓ PASS - Valid configuration runs successfully
-Test 5: ✓ PASS - Lint & cppcheck successful
+19 tests, 0 failures
 ```
-
-### 2. **test_medium_fixes.sh** - Suite de Tests Priorité Moyenne
-
-Teste les quick fixes et refactorings Phase 2.
-
-```bash
-./test_medium_fixes.sh
-```
-
-**Couverture** :
-- ✅ Latitude formatée affichée (Bug #5)
-- ✅ Logging cohérent (Bug #4 - log_error)
-- ✅ Secondes décimales (Bug #7 - fractional seconds)
-- ✅ Lookup tables (Bugs #6, #8)
-- ✅ Helper fonction dates (Bug #9)
 
 ---
 
@@ -73,16 +54,16 @@ moyenne. La commande s'arrête dès qu'une suite échoue.
 ### Option 1 : Tests Rapides
 ```bash
 # Test haute priorité uniquement
-./run_tests.sh
+make test
 
 # Test priorité moyenne uniquement
-./test_medium_fixes.sh
+make test
 ```
 
 ### Option 2 : Tests + Build Validation
 ```bash
 # Nettoyer, compiler, tester
-make clean && make && ./run_tests.sh && ./test_medium_fixes.sh
+make clean && make test
 ```
 
 ### Option 3 : Tests Individuels Manuels
@@ -300,7 +281,7 @@ echo "=========================================="
 | **Capturer output** | `OUTPUT=$(./solar_duration 2>&1)` pour assertions |
 | **Tester cas limite** | Lat=90°, Lat=-90°, date inversée, mode invalide |
 | **Vérifier compilation** | `make clean && make` avant tests |
-| **Documenter intention** | Ajouter commentaires dans scripts de test |
+| **Documenter intention** | Ajouter une description à chaque test unitaire |
 
 ### ❌ À Éviter
 
@@ -375,8 +356,7 @@ sed -i 's/level = .*/level = INFO/' solar_duration.cfg
 ## Checklist Pre-Release
 
 - [ ] `make clean && make` - Compilation sans warnings
-- [ ] `./run_tests.sh` - Tous les tests haute priorité passent
-- [ ] `./test_medium_fixes.sh` - Tous les tests priorité moyenne passent
+- [ ] `make test` - Tous les tests unitaires passent
 - [ ] `make lint` - 0 violations lint
 - [ ] `make cppcheck` - 0 alertes cppcheck
 - [ ] `solar_duration.dat` - Format préservé avec commentaires
@@ -390,14 +370,7 @@ sed -i 's/level = .*/level = INFO/' solar_duration.cfg
 
 **Solution** :
 ```bash
-make clean && make && ./run_tests.sh
-```
-
-### Problème : `Permission denied` sur scripts
-
-**Solution** :
-```bash
-chmod +x *.sh
+make clean && make test
 ```
 
 ### Problème : Tests affectent `solar_duration.dat`
