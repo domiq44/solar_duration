@@ -112,32 +112,32 @@ int read_raw_data(const char *filename, RawConfig *raw) {
     }
 
     // Stockage basé sur le paramètre trouvé
-  // Lookup table pour mappage paramètre → champ RawConfig
-  typedef struct {
-    const char *key;
-    char **target_field;
-  } ParamMapping;
+    // Lookup table pour mappage paramètre → champ RawConfig
+    typedef struct {
+      const char *key;
+      char **target_field;
+    } ParamMapping;
 
-  ParamMapping mappings[] = {
-      {"annee", &raw->raw_annee_str},
-      {"latitude", &raw->raw_latitude_str},
-      {"jour_debut", &raw->raw_jour_debut_str},
-      {"mois_debut", &raw->raw_mois_debut_str},
-      {"jour_fin", &raw->raw_jour_fin_str},
-      {"mois_fin", &raw->raw_mois_fin_str},
-      {"mode_solaire", &raw->raw_mode_solaire_str},
-      {NULL, NULL}  // Sentinelle
-  };
+    ParamMapping mappings[] = {
+        {"annee", &raw->raw_annee_str},
+        {"latitude", &raw->raw_latitude_str},
+        {"jour_debut", &raw->raw_jour_debut_str},
+        {"mois_debut", &raw->raw_mois_debut_str},
+        {"jour_fin", &raw->raw_jour_fin_str},
+        {"mois_fin", &raw->raw_mois_fin_str},
+        {"mode_solaire", &raw->raw_mode_solaire_str},
+        {NULL, NULL} // Sentinelle
+    };
 
-  // Parcourir la lookup table
-  for (int i = 0; mappings[i].key != NULL; i++) {
-    if (strcasecmp(param, mappings[i].key) == 0) {
-      free(*mappings[i].target_field);
-      *mappings[i].target_field = new_str;
-      success_count++;
-      break;
+    // Parcourir la lookup table
+    for (int i = 0; mappings[i].key != NULL; i++) {
+      if (strcasecmp(param, mappings[i].key) == 0) {
+        free(*mappings[i].target_field);
+        *mappings[i].target_field = new_str;
+        success_count++;
+        break;
+      }
     }
-  }
   }
 
   fclose(f);

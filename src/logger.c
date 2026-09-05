@@ -114,7 +114,7 @@ static bool load_log_level_from_config(const char *filename) {
           {"WARN", LOG_WARN},
           {"ERROR", LOG_ERROR},
           {"CRITICAL", LOG_CRITICAL},
-          {NULL, LOG_INFO}  // Sentinelle avec valeur par défaut
+          {NULL, LOG_INFO} // Sentinelle avec valeur par défaut
       };
 
       // Parcourir la lookup table
@@ -127,7 +127,7 @@ static bool load_log_level_from_config(const char *filename) {
       }
 
       if (found)
-        break;  // Sortir de la boucle fgets
+        break; // Sortir de la boucle fgets
     }
   }
 

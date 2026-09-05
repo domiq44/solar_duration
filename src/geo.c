@@ -98,7 +98,8 @@ int parse_latitude_string(const char *ligne, double *result) {
   }
 
   // --- 2. Parsing des composantes numériques ---
-  // Format attendu : "XX deg YY min ZZ.ZZ sec" (secondes peuvent être décimales)
+  // Format attendu : "XX deg YY min ZZ.ZZ sec" (secondes peuvent être
+  // décimales)
   int ret_sscanf =
       sscanf(coord_part, "%d deg %d min %lf sec", &degrees, &minutes, &seconds);
 

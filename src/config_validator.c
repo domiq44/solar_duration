@@ -184,9 +184,10 @@ bool is_config_fully_valid(const FinalConfig *final) {
 
   // 6. Validation du pointeur fonction déclinaison
   if (final->declination_func == NULL) {
-    log_error("ERREUR INTERNE: Pointeur de fonction déclinaison non initialisé. "
-              "Mode de déclinaison: %d",
-              final->mode_declinaison);
+    log_error(
+        "ERREUR INTERNE: Pointeur de fonction déclinaison non initialisé. "
+        "Mode de déclinaison: %d",
+        final->mode_declinaison);
     return false;
   }
 
