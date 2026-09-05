@@ -1,6 +1,18 @@
 # 🏗️ Architecture Technique - Solar Duration Project
 
-**Document de référence technique** pour développeurs. Pour présentation générale, voir `README.md`. Pour axes d'amélioration, voir `IMPROVEMENTS.md`.
+**Document de référence technique** pour développeurs. Pour présentation générale, voir `../README.md`. Pour axes d'amélioration, voir `IMPROVEMENTS.md`.
+
+## Organisation du Projet
+
+```text
+src/      Implémentations C et point d'entrée main.c
+include/  Interfaces publiques et constantes partagées
+tests/    Tests unitaires C
+docs/     Documentation technique, roadmap et guide de tests
+```
+
+Le `Makefile` ajoute `include/` au chemin d'inclusion et construit séparément
+le programme `solar_duration` et le runner `solar_duration_tests`.
 
 ---
 
@@ -447,7 +459,7 @@ b simulation.c:70        # Boucle simulation début
 
 ### **Ajouter Nouveau Modèle Déclinaison**
 
-1. Implémente fonction dans `solar.c` :
+1. Implémente fonction dans `src/solar.c` :
    ```c
    double get_solar_declination_custom(int day_of_year) {
      // Formula...
@@ -455,7 +467,7 @@ b simulation.c:70        # Boucle simulation début
    }
    ```
 
-2. Ajoute mode constant dans `config.h` :
+2. Ajoute mode constant dans `include/config.h` :
    ```c
    #define MODE_CUSTOM (4)
    ```
@@ -482,8 +494,8 @@ Futur : CSV, JSON, Database
 Actuellement : Français uniquement
 
 **Extension Points** :
-- `logger.c` : Localize log messages
-- `geo.c` : Support "47 degrees..." (English)
+- `src/logger.c` : Localize log messages
+- `src/geo.c` : Support "47 degrees..." (English)
 
 ---
 

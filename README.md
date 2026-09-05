@@ -14,10 +14,13 @@ L'objectif n'est pas seulement de trouver un chiffre, mais de construire un syst
 
 ## 🏛️ Architecture Modulaire : La Séparation des Préoccupations (SoC)
 
+Les implémentations se trouvent dans `src/`, les interfaces dans `include/`,
+les tests unitaires dans `tests/` et la documentation technique dans `docs/`.
+
 La force de ce projet réside dans sa modularité. Chaque fichier est responsable d'une seule tâche bien définie. Voici une description détaillée de chaque composant :
 
 ### ⚙️ Modules d'Utilitaires & Support
-*   **`config.h`**: **Le Catalogue de Paramètres**. Définit les constantes fondamentales du système (ex: `MIN_YEAR`, `MAX_YEAR`, `MODE_SINUSOIDAL`). Il sert de référentiel unique pour toutes les limites de validation.
+*   **`include/config.h`**: **Le Catalogue de Paramètres**. Définit les constantes fondamentales du système (ex: `MIN_YEAR`, `MAX_YEAR`, `MODE_SINUSOIDAL`). Il sert de référentiel unique pour toutes les limites de validation.
 *   **`string_utils.c/h`**: **La Boîte à Outils de Chaînes**. Fournit des fonctions utilitaires génériques, principalement `strtrim()`, essentielle pour nettoyer les entrées de configuration en supprimant les espaces superflus.
 *   **`logger.c/h`**: **Le Journaliste de Bord Configurable**. Ce module gère toute la sortie informative.
     *   **Mécanisme :** Il lit son niveau de verbosité depuis un fichier de configuration (`solar_duration.cfg` par défaut).
@@ -39,12 +42,12 @@ La force de ce projet réside dans sa modularité. Chaque fichier est responsabl
     *   **Déclinaison Solaire ($\delta$)**: Il implémente plusieurs modèles pour calculer l'angle d'inclinaison du Soleil par rapport à l'équateur terrestre pour un jour donné :
         *   **Sinusoïdal (Mode 1)**: Calibré, approximation cyclique simple (~±1.5° d'erreur).
         *   **Spencer (Mode 2)**: Calibré, modèle trigonométrique précis (~±0.0006 rad). **[FONCTIONNEL]**
-        *   **Meeus (Mode 3)**: Modèle avancé. **[À implémenter]** (voir `IMPROVEMENTS.md` pour détails).
+        *   **Meeus (Mode 3)**: Modèle avancé. **[À implémenter]** (voir `docs/IMPROVEMENTS.md` pour détails).
     *   **Durée du Jour**: Utilise la déclinaison et la latitude dans des formules trigonométriques (basées sur $\omega$, l'angle horaire) pour déterminer la durée du jour en heures.
-*   **`simulation.c/h`**: **Le Moteur de Boucle**. Ce module est le chef d'orchestre des calculs. Il prend la configuration valide et itère jour après jour (en utilisant `advance_day` de `date.c`) pour exécuter `process_day` pour chaque date de début à date de fin.
+*   **`src/simulation.c` / `include/simulation.h`**: **Le Moteur de Boucle**. Ce module est le chef d'orchestre des calculs. Il prend la configuration valide et itère jour après jour (en utilisant `advance_day` de `src/date.c`) pour exécuter `process_day` pour chaque date de début à date de fin.
 
 ### 👑 Le Contrôleur Principal
-*   **`main.c`**: **L'Orchestrateur**. Il dirige l'intégralité du processus :
+*   **`src/main.c`**: **L'Orchestrateur**. Il dirige l'intégralité du processus :
     1.  Initialisation du Logger.
     2.  Appel à `read_raw_data()` pour charger les chaînes brutes.
     3.  Appel à `parse_and_validate_config()` pour convertir les chaînes en types numériques et valider les bornes (Année, Latitude, Plage de Dates).
@@ -94,7 +97,7 @@ Le système est conçu pour ne jamais planter sans avertissement. Si une erreur 
 | `READ_ERROR_IO_FILE_NOT_FOUND` | **I/O** | Le fichier de données (`.dat`) ou de configuration (`.cfg`) est manquant. | Vérifiez le chemin et le nom de fichier. |
 | `READ_ERROR_DATA_MISSING` | **Configuration** | Le fichier a été lu, mais aucune clé (`annee`, `latitude`, etc.) n'a été trouvée. | Assurez-vous que tous les champs obligatoires sont présents dans `.dat`. |
 | `READ_ERROR_DATA_CONVERSION` | **Format** | Une valeur est présente, mais n'est pas dans le format attendu (ex: `latitude = "abc"` au lieu de `"47 deg..."`). | Corrigez la syntaxe dans le fichier d'entrée. |
-| `is_config_fully_valid` retourne `false` | **Logique Métier** | Les bornes physiques sont dépassées (ex: Année > 3000, Latitude > 90). | Ajustez les valeurs dans `.dat` pour qu'elles respectent les constantes de `config.h`. |
+| `is_config_fully_valid` retourne `false` | **Logique Métier** | Les bornes physiques sont dépassées (ex: Année > 3000, Latitude > 90). | Ajustez les valeurs dans `.dat` pour qu'elles respectent les constantes de `include/config.h`. |
 | `is_time_range_valid` retourne `false` | **Séquence Temporelle** | La date de début est postérieure à la date de fin. | Inverser les dates dans `.dat`. |
 
 ---
@@ -112,11 +115,11 @@ Le système est conçu pour ne jamais planter sans avertissement. Si une erreur 
 - Assurance qualité (linting, formatting, static analysis)
 
 ⏳ **Fonctionnalités Partielles/Incomplètes** :
-- **Mode Meeus** (`mode_solaire = 3`) : Fonction stub retourne 0.0, non implémentée (voir `IMPROVEMENTS.md`)
+- **Mode Meeus** (`mode_solaire = 3`) : Fonction stub retourne 0.0, non implémentée (voir `docs/IMPROVEMENTS.md`)
 - **Support multi-années** : Les dates doivent actuellement être sur la même année calendaire
 
 🐛 **Bugs Connus** :
-Voir le document `IMPROVEMENTS.md` pour liste détaillée. Les plus critiques :
+Voir le document `docs/IMPROVEMENTS.md` pour liste détaillée. Les plus critiques :
 1. Validation latitude accepte degrés > 180 (devrait être > 90)
 2. Comptage de paramètres configuration cassé (ne détecte pas champs manquants)
 3. Pointeur fonction déclinaison non vérifié (NULL check manquant)
@@ -129,7 +132,7 @@ Voir le document `IMPROVEMENTS.md` pour liste détaillée. Les plus critiques :
 
 ### **Roadmap de Correction**
 
-Consultez `IMPROVEMENTS.md` pour :
+Consultez `docs/IMPROVEMENTS.md` pour :
 - Liste complète des 24+ opportunités d'amélioration
 - Priorisation (Haute/Moyenne/Basse)
 - Effort estimé pour chaque correction
@@ -142,7 +145,7 @@ Consultez `IMPROVEMENTS.md` pour :
 **Licence :** Ce projet est distribué sous licence MIT. Les termes de cette licence sont rédigés dans le fichier `LICENSE` (si présent) ou sous-entendus par l'utilisation.
 
 **Contribuer :** Nous encourageons vivement les contributions ! Avant de commencer :
-1. Consultez `IMPROVEMENTS.md` pour connaître les priorités
+1. Consultez `docs/IMPROVEMENTS.md` pour connaître les priorités
 2. Exécutez `make lint` et `make cppcheck` avant tout commit
 3. Ajoutez des tests pour nouvelles fonctionnalités
 4. Documentez les changements dans les commentaires de code

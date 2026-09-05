@@ -22,7 +22,7 @@
 ## 🔴 HAUTE PRIORITÉ - À Corriger Immédiatement
 
 ### 1. Validation de Latitude Invalide
-- **Fichier** : `geo.c:82`
+- **Fichier** : `src/geo.c:82`
 - **Problème** : La validation accepte `degrees > 180`, mais la latitude doit être dans `[-90, 90]`
 - **Impact** : 🔴 Moyen - Données invalides acceptées silencieusement
 - **Effort** : ⚡ Quick (1 ligne)
@@ -37,7 +37,7 @@
 - **Vérification** : Ajouter test avec latitude = 120° (doit être rejetée)
 
 ### 2. Comptage de Paramètres Cassé
-- **Fichier** : `config_reader.c:119-140`
+- **Fichier** : `src/config_reader.c:119-140`
 - **Problème** : Variable `success_count` initialisée à 1 pour chaque paramètre, mais ne compte pas réellement
 - **Impact** : 🔴 Moyen - Validation incomplète passée silencieusement
 - **Effort** : ⚡ Quick (5 lignes)
@@ -56,7 +56,7 @@
 - **Vérification** : Tester avec `.dat` manquant des clés
 
 ### 3. Pointeur de Fonction Déclinaison Non Vérifié
-- **Fichier** : `config_validator.c:21-28`
+- **Fichier** : `src/config_validator.c:21-28`
 - **Problème** : Si `mode_solaire` est invalide, `declination_func` reste NULL
 - **Impact** : 🔴 Moyen - Crash en simulation si NULL dereferencé
 - **Effort** : ⚡ Quick (3 lignes)
@@ -75,7 +75,7 @@
 ## 🟡 PRIORITÉ MOYENNE - Améliorer Robustesse & Qualité
 
 ### 4. Gestion Incohérente des Erreurs (fprintf vs logging)
-- **Fichier** : `config_validator.c:101`
+- **Fichier** : `src/config_validator.c:101`
 - **Problème** : `fprintf(stderr, ...)` bypass complètement le système de logging
 - **Impact** : 🟡 Moyen - Inconsistance dans sortie d'erreurs
 - **Effort** : ⚡ Quick (1 ligne)
@@ -90,7 +90,7 @@
 - **Bénéfice** : Tous les erreurs passent par le système de logging cohérent
 
 ### 5. Variable Latitude Formatée Non Utilisée
-- **Fichier** : `main.c:130-132`
+- **Fichier** : `src/main.c:130-132`
 - **Problème** : `lat_str` allouée mais jamais utilisée en output
 - **Impact** : 🟡 Moyen - Perte de mémoire, information utile non affichée
 - **Effort** : ⚡ Quick (2-3 lignes)
@@ -125,7 +125,7 @@
  **Validation** : make test ✓
 
 ### 7. Perte de Précision: Secondes Fractionnaires
-- **Fichier** : `geo.c:93`
+- **Fichier** : `src/geo.c:93`
 - **Problème** : Format `"%d sec"` utilise integer, perd décimales
 - **Impact** : 🟡 Bas - Perte précision pour entrées comme "30.5 sec"
 - **Effort** : ⚡ Quick (1 ligne)
@@ -140,7 +140,7 @@
   ```
 
 ### 8. Duplication: Parsing Niveaux de Log
-- **Fichier** : `logger.c:110-125`
+- **Fichier** : `src/logger.c:110-125`
 - **Problème** : 5 blocs `strcmp()` pour map string → log level
 - **Impact** : 🟡 Bas - Duplication mineure mais éliminable
 - **Effort** : ⚡ Quick (15 min)
@@ -173,7 +173,7 @@
 **Validation** : make test ✓, compilation lint ✓
 
 ### 9. Refactoring: Date Range Validation
-- **Fichier** : `config_validator.c:140-154`
+- **Fichier** : `src/config_validator.c:140-154`
 - **Problème** : `date_to_ordinal()` appelé 3 fois identiquement
 - **Impact** : 🟡 Bas - Duplication de logique
 - **Effort** : ⚡ Quick (10 min)
@@ -196,7 +196,7 @@
 ## 🟢 PRIORITÉ BASSE - Nice-to-Have & Optimisations
 
 ### 10. Fonctionnalité: Implémentation Mode Meeus
-- **Fichier** : `solar.c:102`
+- **Fichier** : `src/solar.c:102`
 - **Problème** : `get_solar_declination_meeus()` retourne stub (0.0)
 - **Impact** : 🟢 Bas - Fonctionnalité optionnelle non disponible
 - **Effort** : 🟠 Complex (1-2h)
@@ -210,7 +210,7 @@
   ```
 
 ### 11. Optimisation: Date Conversion Lookup
-- **Fichier** : `date.c:70-79`
+- **Fichier** : `src/date.c:70-79`
 - **Problème** : Boucle O(12) pour convertir date → ordinal
 - **Impact** : 🟢 Bas - Performance négligeable pour volumes courants
 - **Effort** : ⚡ Quick (5 min)
@@ -222,7 +222,7 @@
   ```
 
 ### 12. Edge Case: Année Limite Non Contrôlée
-- **Fichier** : `simulation.c:60-68`
+- **Fichier** : `src/simulation.c:60-68`
 - **Problème** : Si dates franchissent année, `FinalConfig.annee` reste fixé
 - **Impact** : 🟢 Bas - Cas rare (dates doivent être même année)
 - **Effort** : 🟠 Medium
@@ -231,7 +231,7 @@
   - Option 2: Étendre `FinalConfig` pour gérer `year_start`, `year_end`
 
 ### 13. Edge Case: Simulation Boucle Débordement Mois
-- **Fichier** : `simulation.c:63-65`
+- **Fichier** : `src/simulation.c:63-65`
 - **Problème** : Pas de check si `current_month > 12` → boucle infinie
 - **Impact** : 🟢 Bas - Cas extrême avec date invalide
 - **Effort** : ⚡ Quick (2 lignes)
@@ -244,7 +244,7 @@
   ```
 
 ### 14. Optimisation: Vérification NULL Fonction Déclinaison
-- **Fichier** : `simulation.c:20`
+- **Fichier** : `src/simulation.c:20`
 - **Problème** : `final->declination_func` jamais vérifié avant utilisation
 - **Impact** : 🟢 Bas - Crash si passé NULL (déjà couvert par bug #3)
 - **Effort** : ⚡ Quick (1 ligne)
@@ -254,7 +254,7 @@
   ```
 
 ### 15. Memory Safety: Gestion strtrim()
-- **Fichier** : `string_utils.c:14-18`
+- **Fichier** : `src/string_utils.c:14-18`
 - **Problème** : `strtrim()` retourne pointeur décalé, pas aligné avec malloc original
 - **Impact** : 🟢 Bas - Risque memory leak en free
 - **Effort** : 🟠 Medium (documenter ou restructurer)
@@ -264,14 +264,14 @@
   - Actuellement: Accepter pattern (safe si free pas appelé sur retour)
 
 ### 16. Memory Safety: Nettoyage Partiel Allocation
-- **Fichier** : `config_reader.c:105-114`
+- **Fichier** : `src/config_reader.c:105-114`
 - **Problème** : Si `strdup()` échoue mid-fonction, cleanup inconsistant
 - **Impact** : 🟢 Bas - Scenario rare (OOM)
 - **Effort** : ⚡ Quick (3 lignes)
 - **Solution** : Ajouter `destroy_raw_config()` en cas erreur
 
 ### 17. Memory Safety: Buffer Overflow sscanf
-- **Fichier** : `geo.c:93`
+- **Fichier** : `src/geo.c:93`
 - **Problème** : `sscanf()` sans limites de champs (ex: `%d` → potentiel overflow)
 - **Impact** : 🟢 Bas - Format spécifié limite implicitement
 - **Effort** : ⚡ Quick (1 ligne)
@@ -285,14 +285,14 @@
   ```
 
 ### 18. Documentation: Incohérence Filename Logger Config
-- **Fichier** : `logger.c:10` vs `Makefile`
+- **Fichier** : `src/logger.c:10` vs `Makefile`
 - **Problème** : Default `logger.cfg` vs Makefile `solar_duration.cfg`
 - **Impact** : 🟢 Bas - Confusion utilisateur
 - **Effort** : ⚡ Quick (1 ligne)
 - **Solution** : Unifier tous les noms vers `solar_duration.cfg`
 
 ### 19. Documentation: Format Input File
-- **Fichier** : `config_reader.c`
+- **Fichier** : `src/config_reader.c`
 - **Problème** : Aucune doc comment formatée `.dat`
 - **Impact** : 🟢 Bas - Utilisateur découvre par essai-erreur
 - **Effort** : ⚡ Quick (doc comment)
@@ -308,7 +308,7 @@
   ```
 
 ### 20. Documentation: Comportement Latitude Entière
-- **Fichier** : `geo.c`
+- **Fichier** : `src/geo.c`
 - **Problème** : `format_latitude()` arrondi/précision non documentés
 - **Impact** : 🟢 Bas - Utilisateur incertain format output
 - **Effort** : ⚡ Quick (2 lignes doc)
@@ -433,7 +433,7 @@ make run_log 2>&1 | grep -i "latitude.*47"
 - **Commentaires** : Documentation inline sur format/valeurs acceptées
 - **Lignes vides** : Organisation visuelle en sections logiques
 
-Les scénarios sont regroupés dans `tests.c` et exécutés avec :
+Les scénarios sont regroupés dans `tests/tests.c` et exécutés avec :
 ```bash
 make test
 ```
@@ -450,7 +450,7 @@ Avant soumission d'une amélioration :
 - [ ] Code passe `make lint` sans erreurs
 - [ ] Code passe `make cppcheck` sans warnings
 - [ ] Code formaté avec `make format`
-- [ ] Tests ajoutés si applicable dans `tests.c`
+- [ ] Tests ajoutés si applicable dans `tests/tests.c`
 - [ ] Fichiers de config originaux **non modifiés** (leur format aide l'utilisateur)
 - [ ] Documentation mise à jour (code comments + README)
 - [ ] Aucun changement de comportement non-intentionnel

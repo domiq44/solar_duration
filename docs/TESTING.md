@@ -150,7 +150,7 @@ mode_solaire: 1 (Sinusoïdal), 2 (Spencer), 3 (Meeus)
 
 ## Écrire des Tests Personnalisés
 
-Les tests unitaires sont écrits dans `tests.c`. Ajouter une fonction de test,
+Les tests unitaires sont écrits dans `../tests/tests.c`. Ajouter une fonction de test,
 utiliser `check(condition, "description")`, puis l'appeler depuis `main()`.
 
 Exemple :
@@ -434,6 +434,6 @@ EOF
 
 - [IMPROVEMENTS.md](IMPROVEMENTS.md) - Détails des bugs et improvements
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Structure interne du code
-- [README.md](README.md) - Guide utilisateur
-- [Makefile](Makefile) - Cibles de build et test
+- [README.md](../README.md) - Guide utilisateur
+- [Makefile](../Makefile) - Cibles de build et test
 

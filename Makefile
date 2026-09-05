@@ -8,15 +8,15 @@ LOG_OUTPUT_FILE = solar_duration.log
 
 # --- Définitions de base ---
 TARGET = solar_duration
-SRCS = config_reader.c config_validator.c date.c geo.c logger.c main.c simulation.c solar.c string_utils.c
+SRCS = src/config_reader.c src/config_validator.c src/date.c src/geo.c src/logger.c src/main.c src/simulation.c src/solar.c src/string_utils.c
 TEST_TARGET = solar_duration_tests
-TEST_SRCS = config_reader.c config_validator.c date.c geo.c logger.c solar.c string_utils.c tests.c
-HDRS = config.h config_reader.h config_validator.h data_types.h date.h geo.h logger.h simulation.h solar.h string_utils.h
+TEST_SRCS = src/config_reader.c src/config_validator.c src/date.c src/geo.c src/logger.c src/solar.c src/string_utils.c tests/tests.c
+HDRS = include/config.h include/config_reader.h include/config_validator.h include/data_types.h include/date.h include/geo.h include/logger.h include/simulation.h include/solar.h include/string_utils.h
 # Définir l'ensemble des fichiers à formater
 ALL_SOURCES = $(SRCS) $(HDRS)
 
 CC = gcc
-CFLAGS = -Wall -O2 -pedantic
+CFLAGS = -Wall -O2 -pedantic -Iinclude
 LDFLAGS = -lm
 
 .PHONY: run run_log test clean format lint cppcheck help
@@ -62,11 +62,11 @@ format:
 
 lint:
 	@which clang-tidy > /dev/null || { echo "Erreur : clang-tidy non installé. Veuillez l'installer."; exit 1; }
-	clang-tidy $(LINT_FLAGS) $(SRCS) -- -I. > lint_report.txt
+	clang-tidy $(LINT_FLAGS) $(SRCS) -- -Iinclude > lint_report.txt
 
 cppcheck:
 	@which cppcheck > /dev/null || { echo "Erreur : cppcheck non installé. Veuillez l'installer..."; exit 1; }
-	cppcheck $(CPPCHECK_FLAGS) $(SRCS) > cppcheck_report.txt
+	cppcheck $(CPPCHECK_FLAGS) -Iinclude $(SRCS) > cppcheck_report.txt
 
 help:
 	@echo "============================================================"
