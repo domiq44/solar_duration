@@ -123,14 +123,14 @@ int read_raw_data(const char *filename, RawConfig *raw);
 // Retourne: READ_SUCCESS, READ_ERROR_IO_FILE_NOT_FOUND, etc.
 
 // Nettoyage mémoire
-void destroy_raw_config(RawConfig *raw);
+void free_raw_config(RawConfig *raw);
 ```
 
 ### **config_validator.h**
 
 ```c
 // Conversion + validation brute → finale
-int parse_and_validate_config(RawConfig *raw, FinalConfig *final);
+int parse_and_validate_config(const RawConfig *raw, FinalConfig *final);
 // Retourne: READ_SUCCESS ou code erreur
 
 // Vérification logique complète (après parse)
@@ -145,52 +145,51 @@ void handle_read_error(int error_code);
 
 ```c
 // Convertir date → numéro ordinal du jour (1-366)
-int date_to_ordinal(int year, int month, int day);
+int date_to_ordinal(int day, int month, int year);
 
 // Vérifier si date existe (ex: 30 février = false)
-bool is_date_valid(int year, int month, int day);
+bool is_date_valid(int day, int month, int year);
 
 // Vérifier si année bissextile
 bool is_leap_year(int year);
 
 // Avancer au jour suivant (gère changement mois/année)
-void advance_day(int *year, int *month, int *day);
+void advance_day(int *jour, int *mois, int *annee);
 ```
 
 ### **geo.h**
 
 ```c
 // Parser "47 deg 17 min 48 sec Nord" → 47.296667
-bool parse_latitude_string(const char *lat_str, double *result);
+int parse_latitude_string(const char *ligne, double *result);
 
 // Formater latitude double en chaîne lisible
-bool format_latitude(double latitude, char *output, size_t max_len);
+void format_latitude(double lat, char *buf, size_t size);
 ```
 
 ### **solar.h**
 
 ```c
 // Calcul déclinaison solaire (mode Sinusoïdal)
-double get_solar_declination_sinusoidal(int day_of_year);
+double calculate_sinusoidal_declination(int jour_n, int annee);
 
 // Calcul déclinaison solaire (mode Spencer - recommandé)
-double get_solar_declination_spencer(int day_of_year);
+double calculate_spencer_declination(int jour_n, int annee);
 
 // Calcul déclinaison solaire (mode Meeus - NOT IMPLEMENTED)
-double get_solar_declination_meeus(int day_of_year);
+double calculate_meeus_declination(int jour_n, int annee);
 
 // Calcul durée du jour (heures) en fonction latitude et déclinaison
-double calculate_day_duration(double latitude, double declination);
+double calculate_day_duration(double delta_deg, double latitude_deg);
 ```
 
 ### **simulation.h**
 
 ```c
 // Orchestration complète: boucle jour par jour
-bool run_simulation(const FinalConfig *final);
+void run_simulation(const FinalConfig *final);
 
-// Traitement d'un jour (appelé pour chaque itération)
-bool process_day(const FinalConfig *final, int year, int month, int day);
+// process_day() est une fonction interne à simulation.c.
 ```
 
 ### **logger.h**
@@ -229,10 +228,10 @@ struct FinalConfig {
 // Sélection dynamique selon mode
 switch (mode) {
   case MODE_SINUSOIDAL:
-    final->declination_func = get_solar_declination_sinusoidal;
+    final->declination_func = calculate_sinusoidal_declination;
     break;
   case MODE_SPENCER:
-    final->declination_func = get_solar_declination_spencer;
+    final->declination_func = calculate_spencer_declination;
     break;
   // etc.
 }
@@ -284,7 +283,7 @@ bool initialize_config_functions(FinalConfig *final, int mode_solaire) {
   
   switch (mode_solaire) {
     case MODE_SINUSOIDAL:
-      final->declination_func = get_solar_declination_sinusoidal;
+      final->declination_func = calculate_sinusoidal_declination;
       return true;
     // ...
   }
@@ -300,7 +299,7 @@ bool initialize_config_functions(FinalConfig *final, int mode_solaire) {
 
 | Struct | Allouée par | Libérée par | Taille |
 |--------|------------|------------|--------|
-| `RawConfig` | `create_raw_config()` | `destroy_raw_config()` | 7 pointers (~56 bytes) + 7 strings |
+| `RawConfig` | `create_raw_config()` | `free_raw_config()` | 7 pointers (~56 bytes) + 7 strings |
 | `FinalConfig` | Stack (main.c) | Automatic | ~64 bytes |
 | Latitude string | `main.c` via `format_latitude()` | `main.c` after logging | ~50 bytes |
 
@@ -461,7 +460,7 @@ b simulation.c:70        # Boucle simulation début
 
 1. Implémente fonction dans `src/solar.c` :
    ```c
-   double get_solar_declination_custom(int day_of_year) {
+  double calculate_custom_declination(int day_of_year, int year) {
      // Formula...
      return declination;
    }
@@ -475,7 +474,7 @@ b simulation.c:70        # Boucle simulation début
 3. Ajoute case dans `config_validator.c::initialize_config_functions()` :
    ```c
    case MODE_CUSTOM:
-     final->declination_func = get_solar_declination_custom;
+    final->declination_func = calculate_custom_declination;
      return true;
    ```
 

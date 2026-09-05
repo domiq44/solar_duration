@@ -21,24 +21,24 @@ La force de ce projet réside dans sa modularité. Chaque fichier est responsabl
 
 ### ⚙️ Modules d'Utilitaires & Support
 *   **`include/config.h`**: **Le Catalogue de Paramètres**. Définit les constantes fondamentales du système (ex: `MIN_YEAR`, `MAX_YEAR`, `MODE_SINUSOIDAL`). Il sert de référentiel unique pour toutes les limites de validation.
-*   **`string_utils.c/h`**: **La Boîte à Outils de Chaînes**. Fournit des fonctions utilitaires génériques, principalement `strtrim()`, essentielle pour nettoyer les entrées de configuration en supprimant les espaces superflus.
-*   **`logger.c/h`**: **Le Journaliste de Bord Configurable**. Ce module gère toute la sortie informative.
+*   **`src/string_utils.c` / `include/string_utils.h`**: **La Boîte à Outils de Chaînes**. Fournit des fonctions utilitaires génériques, principalement `strtrim()`, essentielle pour nettoyer les entrées de configuration en supprimant les espaces superflus.
+*   **`src/logger.c` / `include/logger.h`**: **Le Journaliste de Bord Configurable**. Ce module gère toute la sortie informative.
     *   **Mécanisme :** Il lit son niveau de verbosité depuis un fichier de configuration (`solar_duration.cfg` par défaut).
     *   **Fonctionnalité :** Il permet de basculer entre `DEBUG` (très verbeux, pour le débogage), `INFO` (flux de travail normal), `WARN`, `ERROR` et `CRITICAL`.
     *   **Robustesse :** L'initialisation est configurable (`logger_init(NULL)` pour le défaut).
 
 ### 📅 Modules Temporels et Géographiques
-*   **`date.c/h`**: **Le Gestionnaire Temporel (Calendrier $\leftrightarrow$ Ordinal)**. Ce module est le pont entre le monde humain (Jour/Mois/Année) et le monde mathématique (Jours Ordinaux, 1 à 366).
+*   **`src/date.c` / `include/date.h`**: **Le Gestionnaire Temporel (Calendrier $\leftrightarrow$ Ordinal)**. Ce module est le pont entre le monde humain (Jour/Mois/Année) et le monde mathématique (Jours Ordinaux, 1 à 366).
     *   **Fonctionnalités Clés :**
         *   `is_leap_year()`: Détermine les années bissextiles.
         *   `date_to_ordinal()`: Convertit une date complète en son positionnement dans l'année.
         *   `is_date_valid()`: Valide si une date existe réellement (ex: 30 février).
         *   `advance_day()`: Permet de "passer au jour suivant" de manière fiable, gérant automatiquement les changements de mois et d'année.
-*   **`geo.c/h`**: **Le Traducteur Géométrique**. Ce module est spécialisé dans la conversion des entrées textuelles complexes en valeurs numériques précises.
+*   **`src/geo.c` / `include/geo.h`**: **Le Traducteur Géométrique**. Ce module est spécialisé dans la conversion des entrées textuelles complexes en valeurs numériques précises.
     *   **Fonctionnalité Critique :** `parse_latitude_string()` prend une chaîne comme `"47 deg 17 min 48 sec Nord"` et la transforme en un `double` standardisé (ex: `47.296667`). Il gère également l'inversion de signe pour le Sud.
 
 ### ⚛️ Modules Scientifiques et de Simulation
-*   **`solar.c/h`**: **Le Moteur Physique Astronomique**. C'est le cœur mathématique du projet.
+*   **`src/solar.c` / `include/solar.h`**: **Le Moteur Physique Astronomique**. C'est le cœur mathématique du projet.
     *   **Déclinaison Solaire ($\delta$)**: Il implémente plusieurs modèles pour calculer l'angle d'inclinaison du Soleil par rapport à l'équateur terrestre pour un jour donné :
         *   **Sinusoïdal (Mode 1)**: Calibré, approximation cyclique simple (~±1.5° d'erreur).
         *   **Spencer (Mode 2)**: Calibré, modèle trigonométrique précis (~±0.0006 rad). **[FONCTIONNEL]**
@@ -74,6 +74,7 @@ Le système est piloté via le `Makefile`.
 | :--- | :--- | :--- |
 | `make run` | **Exécution standard.** Compile puis exécute le programme. | Les résultats de chaque jour sont affichés directement dans la console. |
 | `make run_log` | **Exécution journalisée (Recommandé).** Compile et exécute, redirigeant *toutes* les sorties (logs, erreurs) vers le fichier spécifié. | Un fichier **`solar_duration.log`** est créé, contenant l'historique complet du processus. |
+| `make test` | **Tests unitaires.** Compile et exécute `solar_duration_tests`. | 19 tests C exécutés sans modifier les configurations. |
 | `make clean` | **Maintenance.** Supprime l'exécutable, les objets temporaires, et **efface le journal de simulation** (`solar_duration.log`). | Le système revient à un état initial propre. |
 
 ### **Phase 3 : Assurance Qualité (DevOps)**
@@ -118,11 +119,12 @@ Le système est conçu pour ne jamais planter sans avertissement. Si une erreur 
 - **Mode Meeus** (`mode_solaire = 3`) : Fonction stub retourne 0.0, non implémentée (voir `docs/IMPROVEMENTS.md`)
 - **Support multi-années** : Les dates doivent actuellement être sur la même année calendaire
 
-🐛 **Bugs Connus** :
-Voir le document `docs/IMPROVEMENTS.md` pour liste détaillée. Les plus critiques :
-1. Validation latitude accepte degrés > 180 (devrait être > 90)
-2. Comptage de paramètres configuration cassé (ne détecte pas champs manquants)
-3. Pointeur fonction déclinaison non vérifié (NULL check manquant)
+🐛 **Bugs connus et limites** :
+Les correctifs de validation et de parsing des priorités haute et moyenne sont
+implémentés et couverts par `make test`. Les principales limites restantes sont :
+1. Le modèle Meeus (`mode_solaire = 3`) est encore un stub.
+2. Les dates de début et de fin sont limitées à la même année.
+3. La simulation ne propose pas encore de sortie CSV ou JSON.
 
 ⚠️ **Limitations par Conception** :
 - Plage de dates : Même année calendaire (2026/08/21 → 2026/08/21, pas 2026/12 → 2027/01)
@@ -150,4 +152,5 @@ Consultez `docs/IMPROVEMENTS.md` pour :
 3. Ajoutez des tests pour nouvelles fonctionnalités
 4. Documentez les changements dans les commentaires de code
 
-Priorités actuelles : Correctifs critiques (bugs #1-3), puis refactoring qualité.
+Priorités actuelles : modèle Meeus, sorties structurées et gestion des cas
+multi-années.

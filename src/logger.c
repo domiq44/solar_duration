@@ -12,7 +12,7 @@
 
 // --- Configuration interne ---
 LogLevel current_log_level = LOG_INFO; // Valeur par défaut
-#define DEFAULT_LOG_CONFIG_FILE "logger.cfg"
+#define DEFAULT_LOG_CONFIG_FILE "solar_duration.cfg"
 
 // --- Helper pour obtenir l'heure actuelle en chaîne ---
 

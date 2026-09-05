@@ -12,7 +12,8 @@
 // ERR_CONVERSION est utilisé pour signifier un échec de parsing syntaxique
 #define ERR_CONVERSION (-1)
 
-// NOTE: La validation des bornes (-90 à 90) est gérée par main.c
+// La validation des composantes est effectuée pendant le parsing.
+// La configuration finale vérifie ensuite les bornes globales de latitude.
 int parse_latitude_string(const char *ligne, double *result);
 void format_latitude(double lat, char *buf, size_t size);
 

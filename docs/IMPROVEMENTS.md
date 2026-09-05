@@ -22,6 +22,7 @@
 ## 🔴 HAUTE PRIORITÉ - À Corriger Immédiatement
 
 ### 1. Validation de Latitude Invalide
+**Status** : ✅ COMPLETED
 - **Fichier** : `src/geo.c:82`
 - **Problème** : La validation accepte `degrees > 180`, mais la latitude doit être dans `[-90, 90]`
 - **Impact** : 🔴 Moyen - Données invalides acceptées silencieusement
@@ -37,6 +38,7 @@
 - **Vérification** : Ajouter test avec latitude = 120° (doit être rejetée)
 
 ### 2. Comptage de Paramètres Cassé
+**Status** : ✅ COMPLETED
 - **Fichier** : `src/config_reader.c:119-140`
 - **Problème** : Variable `success_count` initialisée à 1 pour chaque paramètre, mais ne compte pas réellement
 - **Impact** : 🔴 Moyen - Validation incomplète passée silencieusement
@@ -56,6 +58,7 @@
 - **Vérification** : Tester avec `.dat` manquant des clés
 
 ### 3. Pointeur de Fonction Déclinaison Non Vérifié
+**Status** : ✅ COMPLETED
 - **Fichier** : `src/config_validator.c:21-28`
 - **Problème** : Si `mode_solaire` est invalide, `declination_func` reste NULL
 - **Impact** : 🔴 Moyen - Crash en simulation si NULL dereferencé
@@ -75,6 +78,7 @@
 ## 🟡 PRIORITÉ MOYENNE - Améliorer Robustesse & Qualité
 
 ### 4. Gestion Incohérente des Erreurs (fprintf vs logging)
+**Status** : ✅ COMPLETED
 - **Fichier** : `src/config_validator.c:101`
 - **Problème** : `fprintf(stderr, ...)` bypass complètement le système de logging
 - **Impact** : 🟡 Moyen - Inconsistance dans sortie d'erreurs
@@ -90,6 +94,7 @@
 - **Bénéfice** : Tous les erreurs passent par le système de logging cohérent
 
 ### 5. Variable Latitude Formatée Non Utilisée
+**Status** : ✅ COMPLETED
 - **Fichier** : `src/main.c:130-132`
 - **Problème** : `lat_str` allouée mais jamais utilisée en output
 - **Impact** : 🟡 Moyen - Perte de mémoire, information utile non affichée
@@ -197,7 +202,7 @@
 
 ### 10. Fonctionnalité: Implémentation Mode Meeus
 - **Fichier** : `src/solar.c:102`
-- **Problème** : `get_solar_declination_meeus()` retourne stub (0.0)
+- **Problème** : `calculate_meeus_declination()` retourne un stub (0.0)
 - **Impact** : 🟢 Bas - Fonctionnalité optionnelle non disponible
 - **Effort** : 🟠 Complex (1-2h)
 - **Solution** : Implémenter formule Meeus-Berger avec coefficients astronomiques
@@ -268,7 +273,7 @@
 - **Problème** : Si `strdup()` échoue mid-fonction, cleanup inconsistant
 - **Impact** : 🟢 Bas - Scenario rare (OOM)
 - **Effort** : ⚡ Quick (3 lignes)
-- **Solution** : Ajouter `destroy_raw_config()` en cas erreur
+- **Solution** : Centraliser le nettoyage avec `free_raw_config()` en cas d'erreur
 
 ### 17. Memory Safety: Buffer Overflow sscanf
 - **Fichier** : `src/geo.c:93`
@@ -285,6 +290,7 @@
   ```
 
 ### 18. Documentation: Incohérence Filename Logger Config
+**Status** : ✅ COMPLETED
 - **Fichier** : `src/logger.c:10` vs `Makefile`
 - **Problème** : Default `logger.cfg` vs Makefile `solar_duration.cfg`
 - **Impact** : 🟢 Bas - Confusion utilisateur
