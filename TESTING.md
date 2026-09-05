@@ -17,7 +17,8 @@ Ce document explique comment exécuter et écrire des tests pour le projet Solar
 
 ### `solar_duration_tests` - Suite de tests unitaires C
 
-Teste les 5 bugs critiques et la qualité du code.
+Compile et exécute les tests unitaires C sans modifier les fichiers de
+configuration du projet.
 
 ```bash
 make test
@@ -41,22 +42,17 @@ make test
 
 ### Commande Recommandée
 
-La cible `make test` constitue le point d'entrée unique pour exécuter toutes les
-suites de tests :
+La cible `make test` est le point d'entrée pour les tests unitaires :
 
 ```bash
 make test
 ```
 
-Elle lance successivement les tests de haute priorité et les tests de priorité
-moyenne. La commande s'arrête dès qu'une suite échoue.
+La commande s'arrête dès qu'un test échoue et retourne un code non nul.
 
-### Option 1 : Tests Rapides
+### Option 1 : Tests Unitaires
 ```bash
-# Test haute priorité uniquement
-make test
-
-# Test priorité moyenne uniquement
+# Tous les tests unitaires
 make test
 ```
 
@@ -66,7 +62,11 @@ make test
 make clean && make test
 ```
 
-### Option 3 : Tests Individuels Manuels
+### Option 3 : Test d'Intégration Manuel
+
+Les tests unitaires n'exécutent pas `main.c` ni la simulation complète. Pour
+tester le workflow avec une configuration personnalisée, utiliser une copie
+temporaire de `solar_duration.dat` :
 
 **Tester avec une configuration personnalisée** :
 ```bash
@@ -149,6 +149,30 @@ mode_solaire: 1 (Sinusoïdal), 2 (Spencer), 3 (Meeus)
 ---
 
 ## Écrire des Tests Personnalisés
+
+Les tests unitaires sont écrits dans `tests.c`. Ajouter une fonction de test,
+utiliser `check(condition, "description")`, puis l'appeler depuis `main()`.
+
+Exemple :
+
+```c
+static void test_example(void) {
+    check(date_to_ordinal(1, 1, 2026) == 1,
+                "January 1 has ordinal 1");
+}
+```
+
+Recompiler et exécuter avec :
+
+```bash
+make test
+```
+
+### Tests d'Intégration Manuels
+
+Les templates shell ci-dessous sont uniquement destinés à des vérifications
+manuelles du programme complet. Ils ne remplacent pas les tests unitaires et
+doivent toujours restaurer la configuration originale.
 
 ### Template de Test Basique
 
@@ -276,9 +300,9 @@ echo "=========================================="
 
 | Pratique | Raison |
 |----------|--------|
-| **Utiliser fichiers test séparés** | Préserve `solar_duration.dat` original avec commentaires/formatage |
+| **Tester les fonctions en mémoire** | Évite de modifier les fichiers de configuration |
 | **Sauvegarder/Restaurer** | `cp solar_duration.dat.bak` puis restaurer après test |
-| **Capturer output** | `OUTPUT=$(./solar_duration 2>&1)` pour assertions |
+| **Capturer output d'intégration** | `OUTPUT=$(./solar_duration 2>&1)` pour assertions |
 | **Tester cas limite** | Lat=90°, Lat=-90°, date inversée, mode invalide |
 | **Vérifier compilation** | `make clean && make` avant tests |
 | **Documenter intention** | Ajouter une description à chaque test unitaire |
@@ -287,7 +311,7 @@ echo "=========================================="
 
 | Piège | Impact |
 |-------|--------|
-| **Modifier `solar_duration.dat` directement** | Perd commentaires, détruit UX |
+| **Modifier `solar_duration.dat` sans sauvegarde** | Perd commentaires, détruit UX |
 | **Pas de sauvegarde** | Difficile de restaurer après crash test |
 | **Grep sans échappement** | Patterns regex peuvent être fragiles |
 | **Oublier rm après test** | Accumulation fichiers temporaires |
