@@ -4,6 +4,12 @@ import os
 import numpy as np # <--- C'EST LA CORRECTION CRUCIALE
 from datetime import datetime
 
+# --- Paramètre de contrôle de la densité des points sur l'axe X ---
+# Un intervalle de 7 signifie qu'on ne garde qu'un point tous les 7 jours.
+# Si vous voulez moins de points, augmentez ce nombre (ex: 14, 21).
+DATA_SAMPLING_INTERVAL = 21
+# ------------------------------------------------------------------
+
 CSV_FILE = "simulation_data.csv"
 
 def plot_duration_vs_date(csv_path):

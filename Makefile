@@ -98,11 +98,11 @@ run_duration_plot: $(TARGET_MAIN_EXE)
 	
 	# 2. Parser le log -> CRÉE simulation_data.csv
 	@echo "-> Étape 2/3 : Extraction des données du log..."
-	$(PYTHON_CMD) log_parser.py
+	$(PYTHON_CMD) tools/log_parser.py
 	
 	# 3. Tracer le graphique -> Utilise simulation_data.csv (Ceci crée le PNG)
 	@echo "-> Étape 3/3 : Génération du fichier PNG..."
-	$(PYTHON_CMD) plot_data.py
+	$(PYTHON_CMD) tools/plot_data.py
 
 	@echo "========================================================"
 	@echo "🎉 ANALYSE TERMINÉE. Vérifiez '$(PLOT_DURATION_OUTPUT)'."
@@ -114,7 +114,7 @@ test_data_integrity: $(CSV_TEST_DATA)
 	@echo "🔍 LANCEMENT DU TEST D'INTÉGRITÉ DES DONNÉES"
 	@echo "=========================================================="
 	# Exécute le script Python de validation
-	$(PYTHON_CMD) test_data_integrity.py
+	$(PYTHON_CMD) tools/test_data_integrity.py
 	
 	# Vérifie le code de sortie du script Python
 	@if [ $$? -eq 0 ]; then \
@@ -137,7 +137,7 @@ run_solar_test_plot: $(TEST_SOLAR_EXE)
 	
 	# 2. Tracer le graphique de comparaison (Ceci utilise CSV_TEST_DATA, pas le log)
 	@echo "-> Étape 2/2 : Génération du fichier PNG..."
-	$(PYTHON_CMD) solar_plotter.py
+	$(PYTHON_CMD) tools/solar_plotter.py
 
 	@echo "=========================================================="
 	@echo "🎉 TEST SOLAIRE TERMINÉ. Vérifiez '$(PLOT_SOLAR_OUTPUT)'."
