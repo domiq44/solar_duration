@@ -1,10 +1,10 @@
 annee = 2026
 
-jour_debut = 21
-mois_debut = 8
+jour_debut = 1
+mois_debut = 9
 
-jour_fin = 21
-mois_fin = 8
+jour_fin = 30
+mois_fin = 9
 
 latitude = 47 deg 17 min 48 sec Nord
 

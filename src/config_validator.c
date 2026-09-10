@@ -69,6 +69,9 @@ int parse_and_validate_config(const RawConfig *raw, FinalConfig *final) {
   // -----------------------------------------------------------------
 
   // 1. Conversion de l'Année
+  log_debug(
+      "DEBUG_PARSE: Tentative de conversion de l'année. Chaîne brute: [%s]",
+      raw->raw_annee_str);
   char *endptr;
   long temp_year = strtol(raw->raw_annee_str, &endptr, 10);
   if (endptr == raw->raw_annee_str || *endptr != '\0') {
@@ -78,6 +81,7 @@ int parse_and_validate_config(const RawConfig *raw, FinalConfig *final) {
   final->annee = (int)temp_year;
 
   // 2. Conversion de la Latitude
+  // (La latitude est gérée par parse_latitude_string, ce qui est déjà bien)
   double lat_val;
   int err_geo = parse_latitude_string(raw->raw_latitude_str, &lat_val);
   if (err_geo != ERR_OK) {
@@ -88,31 +92,49 @@ int parse_and_validate_config(const RawConfig *raw, FinalConfig *final) {
   final->latitude = lat_val;
 
   // 3. Conversion des Dates (Jour/Mois Début & Fin)
+
   // Jour de début
+  log_debug("DEBUG_PARSE: Tentative de convertir le jour de début. Chaîne "
+            "brute: [%s]",
+            raw->raw_jour_debut_str);
   long temp_jd = strtol(raw->raw_jour_debut_str, &endptr, 10);
-  if (endptr == raw->raw_jour_debut_str || *endptr != '\0')
+  if (endptr == raw->raw_jour_debut_str || *endptr != '\0') {
+    log_error("ERREUR DE CONVERSION: 'jour_debut' invalide dans la ligne.");
     return READ_ERROR_DATA_CONVERSION;
+  }
   final->jour_debut = (int)temp_jd;
 
   // Mois de début
+  log_debug("DEBUG_PARSE: Tentative de convertir le mois de début. Chaîne "
+            "brute: [%s]",
+            raw->raw_mois_debut_str);
   long temp_md = strtol(raw->raw_mois_debut_str, &endptr, 10);
   if (endptr == raw->raw_mois_debut_str || *endptr != '\0')
     return READ_ERROR_DATA_CONVERSION;
   final->mois_debut = (int)temp_md;
 
   // Jour de fin
+  log_debug(
+      "DEBUG_PARSE: Tentative de convertir le jour de fin. Chaîne brute: [%s]",
+      raw->raw_jour_fin_str);
   temp_jd = strtol(raw->raw_jour_fin_str, &endptr, 10);
   if (endptr == raw->raw_jour_fin_str || *endptr != '\0')
     return READ_ERROR_DATA_CONVERSION;
   final->jour_fin = (int)temp_jd;
 
   // Mois de fin
+  log_debug(
+      "DEBUG_PARSE: Tentative de convertir le mois de fin. Chaîne brute: [%s]",
+      raw->raw_mois_fin_str);
   temp_md = strtol(raw->raw_mois_fin_str, &endptr, 10);
   if (endptr == raw->raw_mois_fin_str || *endptr != '\0')
     return READ_ERROR_DATA_CONVERSION;
   final->mois_fin = (int)temp_md;
 
   // 4. Conversion du Mode Solaire
+  log_debug(
+      "DEBUG_PARSE: Tentative de convertir le mode solaire. Chaîne brute: [%s]",
+      raw->raw_mode_solaire_str);
   long temp_mode = strtol(raw->raw_mode_solaire_str, &endptr, 10);
   if (endptr == raw->raw_mode_solaire_str || *endptr != '\0') {
     log_error("ERREUR DE CONVERSION: 'mode_solaire' invalide.");
