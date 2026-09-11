@@ -144,7 +144,7 @@ format:
 lint:
 	@which clang-tidy > /dev/null || { echo "Erreur: clang-tidy non installé. Veuillez l'installer."; exit 1; }
 	echo "🔍 Lancement de l'analyse statique avec clang-tidy..."
-	clang-tidy $(LINT_ARGS) $(SRC_C_FILES) -- -Iinclude > cppcheck_report.txt # <-- J'ai renommé le fichier de sortie pour ne pas le confondre avec cppcheck
+	clang-tidy $(LINT_ARGS) $(SRC_C_FILES) -- -Iinclude > lint_report.txt
 	
 cppcheck:
 	@which cppcheck > /dev/null || { echo "Erreur: cppcheck non installé. Veuillez l'installer..."; exit 1; }
