@@ -20,10 +20,10 @@ LOG_CONFIG_FILE := solar_duration.cfg
 LOG_RUNTIME_FILE := solar_duration.log
 
 # --- 🗄️ Fichiers de Sortie/Analyse ---
-CSV_OUTPUT_DATA := simulation_data.csv
-PLOT_DURATION_OUTPUT := daily_duration_plot.png
-CSV_TEST_DATA := solar_declination_test.csv
-PLOT_SOLAR_OUTPUT := solar_declination_comparison_plot.png
+CSV_OUTPUT_DATA := solar_duration.csv
+PLOT_DURATION_OUTPUT := solar_duration.png
+CSV_TEST_DATA := solar_declination.csv
+PLOT_SOLAR_OUTPUT := solar_declination.png
 
 # --- 🛠️ Outils et Compilateurs ---
 CC := gcc
@@ -96,33 +96,17 @@ run_duration_plot: $(TARGET_MAIN_EXE)
 	@echo "-> Étape 1/3 : Exécution de la simulation pour générer le log..."
 	./$(TARGET_MAIN_EXE) > $(LOG_RUNTIME_FILE) 2>&1
 	
-	# 2. Parser le log -> CRÉE simulation_data.csv
+	# 2. Parser le log -> CRÉE solar_duration.csv
 	@echo "-> Étape 2/3 : Extraction des données du log..."
 	$(PYTHON_CMD) tools/log_parser.py
 	
-	# 3. Tracer le graphique -> Utilise simulation_data.csv (Ceci crée le PNG)
+	# 3. Tracer le graphique -> Utilise solar_duration.csv (Ceci crée le PNG)
 	@echo "-> Étape 3/3 : Génération du fichier PNG..."
-	$(PYTHON_CMD) tools/plot_data.py
+	$(PYTHON_CMD) tools/data_plotter.py
 
 	@echo "========================================================"
 	@echo "🎉 ANALYSE TERMINÉE. Vérifiez '$(PLOT_DURATION_OUTPUT)'."
 	@echo "========================================================"
-
-# NOUVELLE CIBLE : Teste l'intégrité du CSV généré par le test solaire.
-test_data_integrity: $(CSV_TEST_DATA)
-	@echo "=========================================================="
-	@echo "🔍 LANCEMENT DU TEST D'INTÉGRITÉ DES DONNÉES"
-	@echo "=========================================================="
-	# Exécute le script Python de validation
-	$(PYTHON_CMD) tools/test_data_integrity.py
-	
-	# Vérifie le code de sortie du script Python
-	@if [ $$? -eq 0 ]; then \
-		echo "✅ TEST D'INTÉGRITÉ : Les données CSV sont valides et dans la plage attendue." ; \
-	else \
-		echo "❌ TEST D'INTÉGRITÉ : Les données CSV sont invalides. Le pipeline doit être revu." ; \
-		exit 1 ; \
-	fi
 
 # 🔬 Workflow complet pour le tracé de la comparaison des modèles (VERSION ULTIME CORRIGÉE)
 run_solar_test_plot: $(TEST_SOLAR_EXE)

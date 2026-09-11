@@ -10,7 +10,7 @@ from datetime import datetime
 DATA_SAMPLING_INTERVAL = 21
 # ------------------------------------------------------------------
 
-CSV_FILE = "simulation_data.csv"
+CSV_FILE = "solar_duration.csv"
 
 def plot_duration_vs_date(csv_path):
     """
@@ -99,7 +99,7 @@ def plot_duration_vs_date(csv_path):
     plt.tight_layout()
     
     # Sauvegarder le graphique
-    output_filename = "daily_duration_plot.png"
+    output_filename = "solar_duration.png"
     plt.savefig(output_filename)
     print(f"\n✅ SUCCÈS : Le graphique a été généré et sauvegardé sous '{output_filename}'")
 

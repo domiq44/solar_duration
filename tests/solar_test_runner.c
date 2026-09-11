@@ -15,7 +15,7 @@
 #include "geo.h"
 
 // --- Définition du fichier de sortie des données ---
-#define TEST_OUTPUT_CSV "solar_declination_test.csv"
+#define TEST_OUTPUT_CSV "solar_declination.csv"
 
 // Fonction pour écrire une ligne de données dans le CSV
 void write_test_data(int day, int month, int year, 

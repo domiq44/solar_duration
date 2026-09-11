@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import os
 
-CSV_FILE = "solar_declination_test.csv"
+CSV_FILE = "solar_declination.csv"
 
 # --- Paramètre de contrôle de la densité des points sur l'axe X ---
 # Un intervalle de 7 signifie qu'on ne garde qu'un point tous les 7 jours.
@@ -125,7 +125,7 @@ def plot_declination_curves(csv_path):
     plt.legend()
     plt.tight_layout()
     
-    output_filename = "solar_declination_comparison_plot.png"
+    output_filename = "solar_declination.png"
     plt.savefig(output_filename)
     print(f"\n✅ SUCCÈS : Le graphique de comparaison a été généré et sauvegardé sous '{output_filename}'")
 

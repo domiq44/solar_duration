@@ -58,7 +58,7 @@ if __name__ == "__main__":
         print("!!! ATTENTION : Aucune donnée n'a été parsée. Vérifiez le log manuellement.")
     
     # Sauvegarder les données dans un format simple (CSV) pour le traçage
-    output_csv = "simulation_data.csv"
+    output_csv = "solar_duration.csv"
     with open(output_csv, 'w') as f:
         # Écrire l'en-tête pour que numpy le reconnaisse
         f.write("Date,Duration_Hours\n") 

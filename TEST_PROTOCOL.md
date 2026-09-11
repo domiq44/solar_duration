@@ -49,7 +49,7 @@ make run_duration_plot
 2.  **Journalisation (`make run_log`):** Vérifiez que `solar_duration.log` est créé. Ouvrez-le et confirmez qu'il contient bien les logs de simulation et qu'il est formaté correctement avec le timestamp.
 3.  **Analyse Finale (`make run_duration_plot`):**
     *   Vérifiez que le `simulation_data.csv` est créé avec les bonnes dates et les durées en heures (format décimal).
-    *   Vérifiez que `daily_duration_plot.png` est généré. **Inspection visuelle :** La courbe doit montrer une variation saisonnière logique (pic en été, creux en hiver).
+    *   Vérifiez que `solar_duration.png` est généré. **Inspection visuelle :** La courbe doit montrer une variation saisonnière logique (pic en été, creux en hiver).
 
 ---
 
@@ -77,7 +77,7 @@ Si une étape échoue, utilisez cette hiérarchie pour localiser le problème :
 
 1.  **Échec en Phase 1 (Build/Unitaires) :** Le problème est dans le **code C** lui-même (syntaxe, logique de base). $\rightarrow$ Corriger dans `src/`.
 2.  **Échec en Phase 2 (Run/Log) :** Le problème est dans la **lecture/parsing des fichiers** ou dans la **logique de boucle C**. $\rightarrow$ Vérifier `config_reader.c`, `simulation.c`, et `logger.c`.
-3.  **Échec en Phase 2/3 (Plotting) :** Le problème est dans **Python** ou dans la **communication entre C et Python**. $\rightarrow$ Vérifier `log_parser.py` et `plot_data.py`.
+3.  **Échec en Phase 2/3 (Plotting) :** Le problème est dans **Python** ou dans la **communication entre C et Python**. $\rightarrow$ Vérifier `log_parser.py` et `data_plotter.py`.
 
 ---
 
