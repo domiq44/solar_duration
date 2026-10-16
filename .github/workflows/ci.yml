@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install quality tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential clang-tidy cppcheck
+
+      - name: Run tests
+        run: make test
+
+      - name: Run clang-tidy
+        run: make lint
+
+      - name: Run cppcheck
+        run: make cppcheck
