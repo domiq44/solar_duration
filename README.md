@@ -1,12 +1,14 @@
 # Simulateur de durée du jour
 
-Une démo interactive est disponible sur [GitHub Pages](https://domiq44.github.io/solar_duration/).
-Elle calcule la durée du jour pour une date et une ville, avec choix du modèle
-solaire et du fuseau horaire.
-
 Petit programme en C qui estime la durée d'ensoleillement pour chaque jour
 d'une période et d'une latitude données. La période peut traverser une ou
 plusieurs années. Trois modèles de déclinaison solaire sont disponibles.
+
+## Démo
+
+Une démo interactive est disponible sur [GitHub Pages](https://domiq44.github.io/solar_duration/).
+Elle calcule la durée du jour pour une date et une ville, avec choix du modèle
+solaire et du fuseau horaire.
 
 ## Démarrage
 
