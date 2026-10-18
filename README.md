@@ -48,7 +48,26 @@ ni créer de fichier CSV :
 build/solar_duration --check --config ma_config.dat
 ```
 
-## Page web statique
+## Calculateur web
+
+Le calculateur utilise le noyau C compilé en WebAssembly; les formules solaires
+ne sont pas réimplémentées en JavaScript. Pour le construire localement,
+installer Emscripten puis lancer :
+
+```sh
+make web_wasm
+python3 -m http.server 8000 -d web
+```
+
+Puis ouvrir `http://localhost:8000`. Le chargement WebAssembly nécessite une
+origine HTTP(S); ouvrir directement `web/index.html` avec `file://` ne suffit
+pas.
+
+Le navigateur calcule la durée du jour, la déclinaison, l'altitude solaire et
+les heures estimées de lever et de coucher à partir du module C. JavaScript
+conserve l'interface, la validation des champs, la recherche de villes et
+l'utilisation des règles de fuseau fournies par le navigateur. Le calcul porte
+sur une date unique, avec Meeus sélectionné par défaut.
 
 Ouvrir [`web/index.html`](web/index.html) dans un navigateur. La page fonctionne
 sans compilation, serveur ni dépendance externe. Elle calcule la durée du jour
@@ -64,16 +83,14 @@ fuseau choisi, notamment des règles CET/CEST selon la date.
 Le seuil solaire est modifiable et peut être rétabli à `-0.833°`. La date et
 les autres réglages sont conservés dans le stockage local du navigateur; le
 bouton « Réinitialiser les réglages » restaure les valeurs initiales. Rien
-n'est envoyé à un serveur. Selon le navigateur, le stockage local peut être
-restreint pour les pages ouvertes directement en `file://`; dans ce cas, le
-calcul reste disponible, mais les réglages ne sont pas mémorisés.
+n'est envoyé à un serveur.
 
-Pour publier une démo, le workflow `.github/workflows/pages.yml` déploie le
-dossier `web/` sur GitHub Pages à chaque push sur `main` et peut aussi être
-lancé manuellement. Dans les paramètres du dépôt, choisir **Settings > Pages >
-Build and deployment > Source: GitHub Actions**. Après le premier déploiement,
-GitHub affiche l'URL publique dans l'environnement `github-pages` de l'onglet
-Actions.
+Pour publier une démo, le workflow `.github/workflows/pages.yml` installe
+Emscripten, compile le module puis déploie le dossier `web/` sur GitHub Pages à
+chaque push sur `main`; il peut aussi être lancé manuellement. Dans les
+paramètres du dépôt, choisir **Settings > Pages > Build and deployment >
+Source: GitHub Actions**. Après le premier déploiement, GitHub affiche l'URL
+publique dans l'environnement `github-pages` de l'onglet Actions.
 
 Les villes utilisent des coordonnées représentatives de leur centre. Les
 horaires sont des estimations géométriques et ne tiennent pas compte du relief,
@@ -136,12 +153,19 @@ les messages de suivi, eux, sont filtrés selon `config/solar_duration.cfg`.
 - `make test` : exécuter les tests unitaires et d'intégration.
 - `make test_unit` : exécuter uniquement les tests unitaires.
 - `make test_integration` : tester avec des configurations isolées.
+- `make coverage` : mesurer toutes les sources C de production dans `src/` et `tools/`.
+- `make web_wasm` : compiler le noyau C pour le navigateur (Emscripten requis).
+- `make test_web_wasm` : tester le module compilé (Node.js requis).
 - `make generate_solar_data` : générer `output/solar_model_comparison.csv`.
 - `make plot_solar_models` : comparer les modèles sur la dernière année.
 - `make help` : afficher les autres cibles disponibles.
 
 Les configurations résident dans `config/`. Les journaux, CSV et graphiques
 générés vont dans `output/`, ignoré par Git et nettoyé par `make clean`.
+Les rapports `.gcov` de `make coverage` vont dans `coverage/`, également ignoré
+par Git et supprimé par `make clean`.
+Pour lire le rapport sous forme graphique, ouvrir `coverage/index.html` après
+avoir installé `gcovr`.
 
 Le graphique multi-latitudes utilise Spencer pour la dernière année disponible,
 de l'équateur aux régions polaires du nord.

@@ -36,6 +36,14 @@ des résultats quotidiens lorsque le niveau de journalisation est `WARN`.
 Les tests du lecteur vérifient le rejet des lignes trop longues. `make test`
 exécute les suites unitaires et d'intégration.
 
+`make coverage` recompile le code avec l'instrumentation GCC, exécute les
+suites unitaires, les tests d'intégration et le générateur, puis affiche la
+couverture par fichier pour toutes les sources de production de `src/` et
+`tools/`. Le rapport HTML navigable est `coverage/index.html`; les rapports
+bruts `.gcov` y sont également écrits. Les sources de test ne font pas partie
+du rapport. Les exécutables instrumentés, journaux et sorties temporaires
+restent dans `build/coverage/`. La cible requiert `gcovr` en plus de GCC/gcov.
+
 `make generate_solar_data` lance un outil distinct qui produit
 `output/solar_model_comparison.csv` pour comparer les trois modèles. Le CSV
 contient également les durées calculées par les trois modèles à la latitude
@@ -44,6 +52,13 @@ définie dans `config/solar_duration.dat`.
 Ce générateur produit des données; il ne remplace pas les tests avec assertions.
 
 Les vérifications complémentaires sont `make lint` et `make cppcheck`.
+
+Le calculateur web utilise le même noyau C via WebAssembly. Avec Emscripten et
+Node.js installés, `make test_web_wasm` compile le module puis vérifie une
+déclinaison de référence, les durées équatoriales et polaires, l'altitude
+solaire, le décalage des heures locales et le rejet d'une date impossible. La
+CI exécute ces contrôles et le workflow Pages compile le module avant le
+déploiement.
 
 Pour construire sans lancer l'application, utiliser `make`. Pour exécuter le
 flux principal, `make run` lit les fichiers de configuration dans `config/`.

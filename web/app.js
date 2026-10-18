@@ -1,8 +1,9 @@
 "use strict";
 
-const radians = Math.PI / 180;
-const degrees = 180 / Math.PI;
+import createSolarCore from "./solar_core.mjs";
+
 const SETTINGS_STORAGE_KEY = "solar-duration-settings-v1";
+let solarCore = null;
 const elements = Object.fromEntries([
   "date-input", "today-button", "city-input", "city-suggestions", "latitude-input",
   "latitude-range", "longitude-input", "location-button", "model-select", "timezone-select",
@@ -66,15 +67,6 @@ function localDateString(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function isLeapYear(year) {
-  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-}
-
-function dayOfYear(year, month, day) {
-  const monthLengths = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  return monthLengths.slice(0, month - 1).reduce((total, days) => total + days, day);
-}
-
 function parseDate(value) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return null;
@@ -84,66 +76,7 @@ function parseDate(value) {
   const day = Number(dayText);
   const date = new Date(year, month - 1, day, 12);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
-  return { year, month, day, ordinal: dayOfYear(year, month, day), date };
-}
-
-function sinusoidalDeclination({ year, ordinal }) {
-  const yearLength = isLeapYear(year) ? 366 : 365;
-  const phase = (ordinal / yearLength - 81 / yearLength) * 2 * Math.PI;
-  return 23.45 * Math.sin(phase);
-}
-
-function spencerDeclination({ ordinal }) {
-  const phase = (ordinal - 1) * 2 * Math.PI / 365;
-  const delta = 0.006918 - 0.399912 * Math.cos(phase) + 0.070257 * Math.sin(phase)
-    - 0.006758 * Math.cos(2 * phase) + 0.000907 * Math.sin(2 * phase)
-    - 0.002697 * Math.cos(3 * phase) + 0.00148 * Math.sin(3 * phase);
-  return delta * degrees;
-}
-
-function julianDay({ year, month, day }) {
-  let adjustedYear = year;
-  let adjustedMonth = month;
-  if (adjustedMonth <= 2) {
-    adjustedYear -= 1;
-    adjustedMonth += 12;
-  }
-  const century = Math.trunc(adjustedYear / 100);
-  const correction = 2 - century + Math.trunc(century / 4);
-  return Math.floor(365.25 * (adjustedYear + 4716))
-    + Math.floor(30.6001 * (adjustedMonth + 1)) + day + correction - 1524.5 + 0.5;
-}
-
-function meeusDeclination(date) {
-  const julianDate = julianDay({ year: date.year, month: 1, day: 1 }) + date.ordinal - 1;
-  const centuries = (julianDate - 2451545) / 36525;
-  const meanLongitude = (280.46646 + 36000.76983 * centuries + 0.0003032 * centuries ** 2) % 360;
-  const meanAnomaly = ((357.52911 + 35999.05029 * centuries - 0.0001537 * centuries ** 2) % 360) * radians;
-  const equationOfCenter = (1.914602 - 0.004817 * centuries - 0.000014 * centuries ** 2) * Math.sin(meanAnomaly)
-    + (0.019993 - 0.000101 * centuries) * Math.sin(2 * meanAnomaly)
-    + 0.000289 * Math.sin(3 * meanAnomaly);
-  const trueLongitude = meanLongitude + equationOfCenter;
-  const omega = (125.04 - 1934.136 * centuries) * radians;
-  const apparentLongitude = (trueLongitude - 0.00569 - 0.00478 * Math.sin(omega)) * radians;
-  const meanObliquity = 23.43929111 - 0.013004167 * centuries - 0.000000164 * centuries ** 2 + 0.000000504 * centuries ** 3;
-  const obliquity = (meanObliquity + 0.00256 * Math.cos(omega)) * radians;
-  return Math.asin(Math.sin(obliquity) * Math.sin(apparentLongitude)) * degrees;
-}
-
-function equationOfTimeMinutes(date) {
-  const centuries = (julianDay(date) - 2451545) / 36525;
-  const meanLongitude = (280.46646 + 36000.76983 * centuries + 0.0003032 * centuries ** 2) * radians;
-  const meanAnomaly = (357.52911 + 35999.05029 * centuries - 0.0001537 * centuries ** 2) * radians;
-  const eccentricity = 0.016708634 - 0.000042037 * centuries - 0.0000001267 * centuries ** 2;
-  const omega = (125.04 - 1934.136 * centuries) * radians;
-  const obliquity = (23.43929111 - 0.013004167 * centuries - 0.000000164 * centuries ** 2
-    + 0.000000504 * centuries ** 3 + 0.00256 * Math.cos(omega)) * radians;
-  const y = Math.tan(obliquity / 2) ** 2;
-  const equation = y * Math.sin(2 * meanLongitude) - 2 * eccentricity * Math.sin(meanAnomaly)
-    + 4 * eccentricity * y * Math.sin(meanAnomaly) * Math.cos(2 * meanLongitude)
-    - 0.5 * y ** 2 * Math.sin(4 * meanLongitude)
-    - 1.25 * eccentricity ** 2 * Math.sin(2 * meanAnomaly);
-  return equation * degrees * 4;
+  return { year, month, day, date };
 }
 
 function timezoneOffsetMinutes(date, timezone) {
@@ -165,33 +98,6 @@ function timezoneOffsetMinutes(date, timezone) {
   return (localAsUtc - instant.getTime()) / 60000;
 }
 
-function declinationFor(date, model) {
-  if (model === "spencer") return spencerDeclination(date);
-  if (model === "sinusoidal") return sinusoidalDeclination(date);
-  return meeusDeclination(date);
-}
-
-function durationHours(latitude, declination, threshold) {
-  if (Math.abs(latitude) === 90) {
-    const altitudeAtPole = latitude > 0 ? declination : -declination;
-    return altitudeAtPole > threshold ? 24 : 0;
-  }
-  const phi = latitude * radians;
-  const delta = declination * radians;
-  const altitude = threshold * radians;
-  const cosHourAngle = (Math.sin(altitude) - Math.sin(phi) * Math.sin(delta))
-    / (Math.cos(phi) * Math.cos(delta));
-  const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHourAngle)));
-  return 2 * hourAngle * 12 / Math.PI;
-}
-
-function solarAltitude(hour, latitude, declination) {
-  const hourAngle = (hour - 12) * 15 * radians;
-  const sineAltitude = Math.sin(latitude * radians) * Math.sin(declination * radians)
-    + Math.cos(latitude * radians) * Math.cos(declination * radians) * Math.cos(hourAngle);
-  return Math.asin(Math.max(-1, Math.min(1, sineAltitude))) * degrees;
-}
-
 function formatDuration(hours) {
   const minutesTotal = Math.round(hours * 60);
   return `${Math.floor(minutesTotal / 60)} h ${String(minutesTotal % 60).padStart(2, "0")} min`;
@@ -200,21 +106,6 @@ function formatDuration(hours) {
 function formatClockTime(hour) {
   const minutesTotal = Math.round((((hour % 24) + 24) % 24) * 60) % 1440;
   return `${String(Math.floor(minutesTotal / 60)).padStart(2, "0")}:${String(minutesTotal % 60).padStart(2, "0")}`;
-}
-
-function estimateSolarEvents(date, latitude, longitude, declination, threshold, timezone) {
-  const phi = latitude * radians;
-  const delta = declination * radians;
-  const altitude = threshold * radians;
-  const cosHourAngle = (Math.sin(altitude) - Math.sin(phi) * Math.sin(delta))
-    / (Math.cos(phi) * Math.cos(delta));
-  const hourAngleDegrees = Math.acos(Math.max(-1, Math.min(1, cosHourAngle))) * degrees;
-  const civilSolarNoonMinutes = 720 - equationOfTimeMinutes(date) - 4 * longitude
-    + timezoneOffsetMinutes(date, timezone);
-  return {
-    sunrise: (civilSolarNoonMinutes - 4 * hourAngleDegrees) / 60,
-    sunset: (civilSolarNoonMinutes + 4 * hourAngleDegrees) / 60
-  };
 }
 
 function formatLatitude(latitude) {
@@ -396,7 +287,7 @@ function drawChart(latitude, declination, threshold) {
   for (let step = 0; step <= 144; step += 1) {
     const hour = step / 6;
     const pointX = x(hour);
-    const pointY = y(solarAltitude(hour, latitude, declination));
+    const pointY = y(solarCore._solar_web_altitude(hour, latitude, declination));
     if (step === 0) context.moveTo(pointX, pointY);
     else context.lineTo(pointX, pointY);
   }
@@ -411,7 +302,7 @@ function drawChart(latitude, declination, threshold) {
   for (let step = 0; step <= 144; step += 1) {
     const hour = step / 6;
     const pointX = x(hour);
-    const pointY = y(solarAltitude(hour, latitude, declination));
+    const pointY = y(solarCore._solar_web_altitude(hour, latitude, declination));
     if (step === 0) context.moveTo(pointX, pointY);
     else context.lineTo(pointX, pointY);
   }
@@ -426,6 +317,7 @@ function drawChart(latitude, declination, threshold) {
 }
 
 function update() {
+  if (!solarCore) return;
   const date = parseDate(elements["date-input"].value);
   const latitudeText = elements["latitude-input"].value.trim();
   const longitudeText = elements["longitude-input"].value.trim();
@@ -460,11 +352,21 @@ function update() {
 
   const model = elements["model-select"].value;
   const timezone = elements["timezone-select"].value;
-  const declination = declinationFor(date, model);
-  const duration = durationHours(latitude, declination, threshold);
+  const modelNumber = model === "sinusoidal" ? 1 : model === "spencer" ? 2 : 3;
+  const declination = solarCore._solar_web_declination(
+    modelNumber, date.year, date.month, date.day);
+  const duration = solarCore._solar_web_day_duration(
+    modelNumber, date.year, date.month, date.day, latitude, threshold);
   const events = duration === 0 || duration === 24
     ? null
-    : estimateSolarEvents(date, latitude, longitude, declination, threshold, timezone);
+    : {
+        sunrise: solarCore._solar_web_event_hour(
+          date.year, date.month, date.day, latitude, longitude, declination,
+          threshold, timezoneOffsetMinutes(date, timezone), 1),
+        sunset: solarCore._solar_web_event_hour(
+          date.year, date.month, date.day, latitude, longitude, declination,
+          threshold, timezoneOffsetMinutes(date, timezone), 0)
+      };
   const dateLabel = new Intl.DateTimeFormat("fr-FR", { dateStyle: "full" }).format(date.date);
   elements["result-date"].textContent = dateLabel;
   elements["duration-value"].textContent = formatDuration(duration);
@@ -563,3 +465,9 @@ elements["location-button"].addEventListener("click", () => {
   );
 });
 new ResizeObserver(update).observe(elements["solar-chart"]);
+createSolarCore().then((module) => {
+  solarCore = module;
+  update();
+}).catch(() => {
+  setStatus("Le module de calcul WebAssembly n’a pas pu être chargé.", true);
+});

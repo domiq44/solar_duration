@@ -5,6 +5,7 @@
 #include "solar.h"
 #include "test_assertions.h"
 #include "test_runner.h"
+#include "web_api.h"
 
 /* Fonctions auxiliaires */
 
@@ -351,6 +352,126 @@ static TestResult test_meeus_declination_is_near_winter_solstice_minimum(void) {
                           "Meeus declination is near winter solstice minimum");
 }
 
+/* Vérifie l'altitude solaire maximale à midi solaire à l'équateur. */
+static TestResult test_solar_altitude_reaches_zenith_at_equatorial_noon(void) {
+  /* Given */
+  const double expected_altitude = 90.0;
+
+  /* When */
+  double altitude = calculate_solar_altitude(12.0, 0.0, 0.0);
+
+  /* Then */
+  return assert_condition(fabs(altitude - expected_altitude) < 1e-9,
+                          "solar altitude reaches zenith at equatorial noon");
+}
+
+/* Vérifie que le fuseau décale ensemble le lever et le coucher. */
+static TestResult test_solar_events_follow_timezone_offset(void) {
+  /* Given */
+  const CalendarDate date = {.jour = 20, .mois = 3, .annee = 2024};
+  const double latitude = 0.0;
+  const double longitude = 0.0;
+  const double declination = 0.0;
+  const double threshold = 0.0;
+  const double timezone_offset_minutes = 120.0;
+
+  /* When */
+  double sunrise_utc = calculate_solar_event_hour(
+      date, latitude, longitude, declination, threshold, 0.0, 1);
+  double sunrise_local = calculate_solar_event_hour(
+      date, latitude, longitude, declination, threshold,
+      timezone_offset_minutes, 1);
+  double sunset_utc = calculate_solar_event_hour(
+      date, latitude, longitude, declination, threshold, 0.0, 0);
+  double sunset_local = calculate_solar_event_hour(
+      date, latitude, longitude, declination, threshold,
+      timezone_offset_minutes, 0);
+
+  /* Then */
+  return assert_condition(fabs(sunrise_local - sunrise_utc - 2.0) < 1e-9 &&
+                              fabs(sunset_local - sunset_utc - 2.0) < 1e-9,
+                          "solar events shift with the civil timezone offset");
+}
+
+/* Vérifie que l'API web sélectionne les modèles C et rejette les entrées invalides. */
+static TestResult test_web_api_declination_selects_models_and_rejects_invalid_input(void) {
+  /* Given */
+  const CalendarDate date = {.jour = 20, .mois = 3, .annee = 2024};
+  const SolarDate solar_date = {
+      .jour_ordinal = date_to_ordinal(date), .annee = date.annee};
+
+  /* When */
+  double sinusoidal = solar_web_declination(1, 2024, 3, 20);
+  double spencer = solar_web_declination(2, 2024, 3, 20);
+  double meeus = solar_web_declination(3, 2024, 3, 20);
+  double invalid_model = solar_web_declination(99, 2024, 3, 20);
+  double invalid_date = solar_web_declination(3, 2024, 2, 30);
+
+  /* Then */
+  return assert_condition(
+      sinusoidal == calculate_sinusoidal_declination(solar_date) &&
+          spencer == calculate_spencer_declination(solar_date) &&
+          meeus == calculate_meeus_declination(solar_date) &&
+          isnan(invalid_model) && isnan(invalid_date),
+      "web API selects each C model and rejects invalid inputs");
+}
+
+/* Vérifie la durée exposée par l'API web et ses validations de latitude/seuil. */
+static TestResult test_web_api_day_duration_validates_observation(void) {
+  /* Given */
+  const int model = 3;
+  const int year = 2024;
+  const int month = 3;
+  const int day = 20;
+  const double declination = solar_web_declination(model, year, month, day);
+  const double expected_duration = calculate_day_duration((SolarObservation){
+      .declinaison_degres = declination,
+      .latitude_degres = 48.0,
+      .altitude_solaire_seuil_degres = -0.833});
+
+  /* When */
+  double duration =
+      solar_web_day_duration(model, year, month, day, 48.0, -0.833);
+  double invalid_latitude =
+      solar_web_day_duration(model, year, month, day, 91.0, -0.833);
+  double invalid_threshold =
+      solar_web_day_duration(model, year, month, day, 48.0, -91.0);
+
+  /* Then */
+  return assert_condition(duration == expected_duration &&
+                              isnan(invalid_latitude) &&
+                              isnan(invalid_threshold),
+                          "web API validates the daylight observation");
+}
+
+/* Vérifie que l'API web expose l'altitude et l'heure d'événement du noyau C. */
+static TestResult test_web_api_exposes_altitude_and_solar_event(void) {
+  /* Given */
+  const CalendarDate date = {.jour = 20, .mois = 3, .annee = 2024};
+  const double latitude = 48.0;
+  const double longitude = 2.0;
+  const double declination = 0.0;
+  const double threshold = -0.833;
+  const double timezone_offset = 60.0;
+
+  /* When */
+  double altitude = solar_web_altitude(12.0, latitude, declination);
+  double sunrise = solar_web_event_hour(
+      date.annee, date.mois, date.jour, latitude, longitude, declination,
+      threshold, timezone_offset, 1);
+  double expected_sunrise = calculate_solar_event_hour(
+      date, latitude, longitude, declination, threshold, timezone_offset, 1);
+  double invalid_event = solar_web_event_hour(
+      2024, 2, 30, latitude, longitude, declination, threshold,
+      timezone_offset, 1);
+
+  /* Then */
+  return assert_condition(
+      altitude == calculate_solar_altitude(12.0, latitude, declination) &&
+          sunrise == expected_sunrise && isnan(invalid_event),
+      "web API exposes C altitude and validates solar event dates");
+}
+
 static const TestCase test_cases[] = {
     {"test_sinusoidal_declination_tracks_seasonal_cycle",
      test_sinusoidal_declination_tracks_seasonal_cycle},
@@ -382,6 +503,16 @@ static const TestCase test_cases[] = {
      test_meeus_declination_is_near_summer_solstice_maximum},
     {"test_meeus_declination_is_near_winter_solstice_minimum",
      test_meeus_declination_is_near_winter_solstice_minimum},
+    {"test_solar_altitude_reaches_zenith_at_equatorial_noon",
+     test_solar_altitude_reaches_zenith_at_equatorial_noon},
+    {"test_solar_events_follow_timezone_offset",
+     test_solar_events_follow_timezone_offset},
+    {"test_web_api_declination_selects_models_and_rejects_invalid_input",
+     test_web_api_declination_selects_models_and_rejects_invalid_input},
+    {"test_web_api_day_duration_validates_observation",
+     test_web_api_day_duration_validates_observation},
+    {"test_web_api_exposes_altitude_and_solar_event",
+     test_web_api_exposes_altitude_and_solar_event},
 };
 
 /* Exécuteur */

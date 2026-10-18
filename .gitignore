@@ -36,9 +36,12 @@ solar_duration.log
 # Bien que votre Makefile soit simple, il est bon de garder ceci par précaution
 # Si vous utilisiez CMake ou Makefiles complexes, ils pourraient générer des dossiers de build ici.
 build/
+/coverage/
 bin/
 obj/
 /output/
+web/solar_core.mjs
+web/solar_core.wasm
 
 # --------------------------------------------------
 # 📜 Fichiers de licence et documentation

@@ -11,7 +11,8 @@ CORE_SOURCES := \
 	src/logger.c \
 	src/simulation.c \
 	src/solar.c \
-	src/string_utils.c
+	src/string_utils.c \
+	src/web_api.c
 APP_SOURCES := $(CORE_SOURCES) src/main.c
 
 TEST_FRAMEWORK_SOURCES := \
@@ -32,6 +33,11 @@ LINT_SOURCES := $(APP_SOURCES) tools/solar_data_generator.c
 OUTPUT_DIR := output
 BUILD_DIR := build
 TEST_BUILD_DIR := $(BUILD_DIR)/tests
+COVERAGE_DIR := $(BUILD_DIR)/coverage
+COVERAGE_OBJECT_DIR := $(COVERAGE_DIR)/objects
+COVERAGE_REPORT_DIR := coverage
+COVERAGE_HTML_REPORT := $(COVERAGE_REPORT_DIR)/index.html
+COVERAGE_TEST_BUILD_DIR := $(COVERAGE_DIR)/tests
 UNIT_TEST_MODULES := \
 	config_reader \
 	config_validator \
@@ -46,6 +52,17 @@ UNIT_TEST_EXECUTABLES := $(addprefix $(TEST_BUILD_DIR)/solar_duration_tests_,\
 INTEGRATION_TEST_EXECUTABLE := $(TEST_BUILD_DIR)/solar_duration_integration_tests
 SOLAR_DATA_GENERATOR := $(TEST_BUILD_DIR)/solar_data_generator
 APP_EXECUTABLE := $(BUILD_DIR)/solar_duration
+COVERAGE_CFLAGS = $(filter-out -O2,$(CFLAGS)) -O0 -g --coverage
+COVERAGE_CORE_OBJECTS := $(addprefix $(COVERAGE_OBJECT_DIR)/,$(CORE_SOURCES:.c=.o))
+COVERAGE_FRAMEWORK_OBJECTS := $(addprefix $(COVERAGE_OBJECT_DIR)/,$(TEST_FRAMEWORK_SOURCES:.c=.o))
+COVERAGE_FILE_UTILS_OBJECT := $(COVERAGE_OBJECT_DIR)/tests/support/test_file_utils.o
+COVERAGE_TEST_EXECUTABLES := $(addprefix $(COVERAGE_TEST_BUILD_DIR)/solar_duration_tests_,\
+	$(UNIT_TEST_MODULES))
+COVERAGE_APP_EXECUTABLE := $(COVERAGE_DIR)/solar_duration
+COVERAGE_INTEGRATION_TEST := $(COVERAGE_TEST_BUILD_DIR)/solar_duration_integration_tests
+COVERAGE_SOLAR_DATA_GENERATOR := $(COVERAGE_DIR)/solar_data_generator
+COVERAGE_SOURCES := $(APP_SOURCES) tools/solar_data_generator.c
+COVERAGE_REPORT_FILES := $(addsuffix .gcov,$(notdir $(COVERAGE_SOURCES)))
 
 # --- En-têtes publics ---
 PUBLIC_HEADERS := \
@@ -58,7 +75,8 @@ PUBLIC_HEADERS := \
 	include/logger.h \
 	include/simulation.h \
 	include/solar.h \
-	include/string_utils.h
+	include/string_utils.h \
+	include/web_api.h
 
 # --- Fichiers d'entrée et sorties ---
 LOG_RUNTIME_FILE := $(OUTPUT_DIR)/solar_duration.log
@@ -75,6 +93,11 @@ CC := gcc
 CFLAGS := -std=c11 -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -Wall -Wextra -Wpedantic -O2 -Iinclude
 LDFLAGS := -lm
 PYTHON_CMD := python3
+NODE_CMD := node
+GCOVR := gcovr
+EMCC := emcc
+WASM_MODULE := web/solar_core.mjs
+WASM_SOURCES := src/date.c src/solar.c src/web_api.c
 
 # --- Analyse statique ---
 CPPCHECK_ARGS := \
@@ -88,7 +111,7 @@ CPPCHECK_SOURCES := $(sort $(APP_SOURCES) $(wildcard tests/test_*.c) \
 # CIBLES DE COMPILATION
 # ==========================================================================
 
-.PHONY: all run run_log test test_unit test_integration
+.PHONY: all run run_log test test_unit test_integration coverage web_wasm test_web_wasm
 .PHONY: generate_solar_data plot_duration plot_solar_models plot_latitudes
 .PHONY: plot_duration_heatmap plot_all
 .PHONY: clean format lint cppcheck help
@@ -147,6 +170,74 @@ test_integration: $(APP_EXECUTABLE) $(INTEGRATION_TEST_EXECUTABLE)
 
 test: test_unit test_integration
 
+$(COVERAGE_OBJECT_DIR)/%.o: %.c $(PUBLIC_HEADERS) $(UNIT_TEST_HEADERS)
+	@mkdir -p $(@D)
+	@$(CC) $(COVERAGE_CFLAGS) -Itests/support -c -o $@ $<
+
+$(COVERAGE_TEST_EXECUTABLES): $(COVERAGE_TEST_BUILD_DIR)/solar_duration_tests_%: \
+		$(COVERAGE_CORE_OBJECTS) $(COVERAGE_FRAMEWORK_OBJECTS) \
+		$(COVERAGE_FILE_UTILS_OBJECT) $(COVERAGE_OBJECT_DIR)/tests/test_%.o
+	@mkdir -p $(@D)
+	@$(CC) --coverage -o $@ $^ $(LDFLAGS)
+
+$(COVERAGE_APP_EXECUTABLE): $(COVERAGE_CORE_OBJECTS) \
+		$(COVERAGE_OBJECT_DIR)/src/main.o
+	@mkdir -p $(@D)
+	@$(CC) --coverage -o $@ $^ $(LDFLAGS)
+
+$(COVERAGE_INTEGRATION_TEST): \
+		$(COVERAGE_OBJECT_DIR)/tests/test_application.o \
+		$(COVERAGE_FRAMEWORK_OBJECTS)
+	@mkdir -p $(@D)
+	@$(CC) --coverage -o $@ $^ $(LDFLAGS)
+
+$(COVERAGE_SOLAR_DATA_GENERATOR): $(COVERAGE_CORE_OBJECTS) \
+		$(COVERAGE_OBJECT_DIR)/tools/solar_data_generator.o
+	@mkdir -p $(@D)
+	@$(CC) --coverage -o $@ $^ $(LDFLAGS)
+
+coverage: $(COVERAGE_TEST_EXECUTABLES) $(COVERAGE_APP_EXECUTABLE) \
+		$(COVERAGE_INTEGRATION_TEST) $(COVERAGE_SOLAR_DATA_GENERATOR)
+	@command -v gcov >/dev/null || { echo "Erreur: gcov est requis (fourni avec GCC)."; exit 1; }
+	@command -v $(GCOVR) >/dev/null || { echo "Erreur: gcovr est requis pour générer le rapport HTML."; exit 1; }
+	@find $(COVERAGE_OBJECT_DIR) -name '*.gcda' -delete
+	@mkdir -p $(COVERAGE_REPORT_DIR)
+	@rm -f $(COVERAGE_REPORT_DIR)/*.gcov $(COVERAGE_REPORT_DIR)/*.html \
+		$(COVERAGE_REPORT_FILES)
+	@set -e; for test_executable in $(COVERAGE_TEST_EXECUTABLES); do \
+		log_file=$(COVERAGE_DIR)/$$(basename $$test_executable).log; \
+		./$$test_executable > $$log_file 2>&1 || { cat $$log_file; exit 1; }; \
+	done
+	@log_file=$(COVERAGE_DIR)/integration.log; \
+		./$(COVERAGE_INTEGRATION_TEST) ./$(COVERAGE_APP_EXECUTABLE) \
+		> $$log_file 2>&1 || { cat $$log_file; exit 1; }
+	@mkdir -p $(COVERAGE_DIR)/runtime/config $(COVERAGE_DIR)/runtime/output
+	@cp config/solar_duration.dat config/solar_data_generator.cfg \
+		$(COVERAGE_DIR)/runtime/config/
+	@log_file=$(COVERAGE_DIR)/solar_data_generator.log; \
+		(cd $(COVERAGE_DIR)/runtime && ../solar_data_generator) \
+		> $$log_file 2>&1 || { cat $$log_file; exit 1; }
+	@echo "--- Couverture des sources src/ et tools/ (rapports .gcov dans $(COVERAGE_REPORT_DIR)) ---"
+	@set -e; for source in $(COVERAGE_SOURCES); do \
+		object=$(COVERAGE_OBJECT_DIR)/$${source%.c}.gcno; \
+		gcov -b -c -o $$object $$source; \
+	done
+	@mv $(COVERAGE_REPORT_FILES) $(COVERAGE_REPORT_DIR)/
+	@$(GCOVR) --root . --object-directory $(COVERAGE_OBJECT_DIR) \
+		--filter 'src/.*\.c$$' --filter 'tools/.*\.c$$' \
+		--html-details $(COVERAGE_HTML_REPORT) --print-summary
+	@echo "Rapport détaillé : $(COVERAGE_HTML_REPORT)"
+
+$(WASM_MODULE): $(WASM_SOURCES) include/config.h include/date.h include/solar.h include/web_api.h
+	@$(EMCC) -std=c11 -O2 -Iinclude $(WASM_SOURCES) -lm \
+		-sMODULARIZE=1 -sEXPORT_ES6=1 -sENVIRONMENT=web,node \
+		-sALLOW_MEMORY_GROWTH=1 -o $@
+
+web_wasm: $(WASM_MODULE)
+
+test_web_wasm: $(WASM_MODULE)
+	@$(NODE_CMD) tests/test_web_wasm.mjs
+
 # 🔬 Génération des données de comparaison solaire
 generate_solar_data: $(SOLAR_DATA_GENERATOR)
 	@mkdir -p $(OUTPUT_DIR)
@@ -203,6 +294,8 @@ plot_all: plot_duration plot_solar_models plot_latitudes plot_duration_heatmap
 clean:
 	@echo "🧹 Nettoyage : Suppression des exécutables, objets, journaux et données générées..."
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(COVERAGE_REPORT_DIR)
+	@rm -f web/solar_core.mjs web/solar_core.wasm
 	@rm -f *.o *.a *.so *.dll *.exe \
 		$(LOG_RUNTIME_FILE) \
 		$(CSV_OUTPUT_DATA) $(PLOT_DURATION_OUTPUT) $(PLOT_LATITUDES_OUTPUT) \
@@ -238,6 +331,9 @@ help:
 	@echo "  make test                  : Compile et exécute les tests unitaires et d'intégration."
 	@echo "  make test_unit             : Exécute uniquement les tests unitaires."
 	@echo "  make test_integration      : Exécute le programme avec des configurations isolées."
+	@echo "  make coverage              : Mesure les sources C de production et écrit les rapports dans coverage/."
+	@echo "  make web_wasm              : Compile le noyau C pour le web (Emscripten requis)."
+	@echo "  make test_web_wasm         : Teste le module WebAssembly avec Node.js."
 	@echo "  make generate_solar_data   : Génère le CSV de comparaison des modèles dans $(OUTPUT_DIR)/."
 	@echo ""
 	@echo "📊 ANALYSE ET TRACAGE (Workflow complet) :"

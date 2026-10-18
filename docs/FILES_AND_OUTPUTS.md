@@ -15,7 +15,9 @@ config/                         fichiers d'entrée suivis par Git
 web/                            calculateur statique suivi par Git
 ├── index.html                  structure et contrôles
 ├── styles.css                  présentation responsive
-└── app.js                      modèles et calculs côté navigateur
+├── app.js                      interface et appels WebAssembly
+├── solar_core.mjs              chargeur généré par Emscripten (ignoré par Git)
+└── solar_core.wasm             calculs C compilés (ignoré par Git)
 
 docs/images/                    exemples de graphiques suivis par Git
 ├── solar_duration.png
@@ -34,15 +36,21 @@ output/                         créé par les commandes make, ignoré par Git
 └── solar_duration_heatmap.png
 
 build/                          exécutables de l'application et des tests
+coverage/                       rapports HTML et gcov, créés par make coverage
 ```
 
 Les listes ci-dessous détaillent le rôle des entrées et la commande qui produit
 chaque sortie.
 
-Le calculateur dans `web/` se lance en ouvrant `web/index.html`; il ne génère
-pas de fichier dans le dépôt. Ses réglages sont stockés dans le navigateur de
-l'utilisateur, pas dans un fichier de configuration du projet. Le détail de
-son fonctionnement est dans [README.md](../README.md#page-web-statique).
+Le calculateur utilise `make web_wasm` pour générer son module C et doit être
+servi par HTTP(S), par exemple avec `python3 -m http.server 8000 -d web`. Ses
+réglages sont stockés dans le navigateur de l'utilisateur, pas dans un fichier
+de configuration du projet. Le détail de son fonctionnement est dans
+[README.md](../README.md#calculateur-web).
+
+`coverage/index.html` est le rapport navigable créé par `make coverage`; les
+fichiers `.gcov` annotés sont conservés en complément. Le répertoire est
+ignoré par Git et supprimé par `make clean`.
 
 ## Fichiers d'entrée
 

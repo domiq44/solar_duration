@@ -31,7 +31,21 @@ Les chaînes brutes sont libérées après conversion avec `free_raw_config()`.
 `FinalConfig` contient des valeurs numériques et un pointeur vers la fonction
 de déclinaison choisie. Il ne possède pas de mémoire dynamique.
 
-## Calculateur Web statique
+## Calculateur Web
+
+Le dossier `web/` contient l'interface et le module `solar_core.wasm`, compilé
+à partir de `src/solar.c`, `src/date.c` et `src/web_api.c`. `app.js` appelle ce
+module pour la déclinaison, la durée, les événements solaires et la courbe
+d'altitude; il ne duplique pas ces calculs. JavaScript conserve les opérations
+propres au navigateur, notamment le décalage de fuseau obtenu avec
+`Intl.DateTimeFormat`, l'interface et la persistance des réglages dans
+`localStorage`.
+
+La cible `make web_wasm` produit `web/solar_core.mjs` et
+`web/solar_core.wasm`. Ces fichiers générés sont ignorés par Git. Le workflow
+GitHub Pages les compile avant de publier le dossier web; le site local doit
+être servi par HTTP(S), car les navigateurs bloquent le chargement WASM depuis
+une page `file://`.
 
 Le dossier `web/` contient une interface indépendante de l'exécutable C :
 `index.html` charge `styles.css` et `app.js`. Les calculs de déclinaison et de
@@ -54,8 +68,10 @@ entre heure standard et heure d'été. Les choix sont persistés dans le
    modèle solaire.
 - `date.c` : valide les dates, calcule leur ordinal et avance d'un jour.
 - `geo.c` : parse et formate la latitude en degrés, minutes et secondes.
-- `solar.c` : calcule la déclinaison (sinusoïdal, Spencer, Meeus) et la durée
-   du jour.
+- `solar.c` : calcule la déclinaison (sinusoïdal, Spencer, Meeus), la durée du
+   jour, l'équation du temps, l'altitude solaire et les heures d'événements.
+- `web_api.c` : expose au navigateur des fonctions C à signatures simples pour
+   le module WebAssembly.
 - `simulation.c` : parcourt la période et journalise le résultat quotidien.
 - `logger.c` : filtre et formate les messages selon le niveau configuré.
 - `string_utils.c` : fournit les utilitaires de chaîne du parsing.
@@ -98,3 +114,6 @@ un répertoire temporaire.
 
 `make test_unit` et `make test_integration` permettent de lancer chaque niveau
 séparément. Les détails figurent dans [TESTING.md](TESTING.md).
+
+`make test_web_wasm` compile le noyau avec Emscripten puis vérifie les fonctions
+exportées depuis Node.js. Emscripten et Node.js sont requis pour cette cible.

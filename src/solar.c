@@ -147,6 +147,82 @@ double calculate_meeus_declination(SolarDate date) {
   return asin(sin(obliquity) * sin(apparent_longitude)) * 180.0 / M_PI;
 }
 
+static double calculate_equation_of_time_minutes(CalendarDate date) {
+  double centuries = (julian_day(date) - 2451545.0) / 36525.0;
+  double mean_longitude =
+      (280.46646 + 36000.76983 * centuries +
+       0.0003032 * centuries * centuries) *
+      M_PI / 180.0;
+  double mean_anomaly =
+      (357.52911 + 35999.05029 * centuries -
+       0.0001537 * centuries * centuries) *
+      M_PI / 180.0;
+  double eccentricity =
+      0.016708634 - 0.000042037 * centuries - 0.0000001267 * centuries * centuries;
+  double omega = (125.04 - 1934.136 * centuries) * M_PI / 180.0;
+  double obliquity =
+      (23.43929111 - 0.013004167 * centuries -
+       0.000000164 * centuries * centuries +
+       0.000000504 * centuries * centuries * centuries +
+       0.00256 * cos(omega)) *
+      M_PI / 180.0;
+  double y = tan(obliquity / 2.0) * tan(obliquity / 2.0);
+  double equation =
+      y * sin(2.0 * mean_longitude) - 2.0 * eccentricity * sin(mean_anomaly) +
+      4.0 * eccentricity * y * sin(mean_anomaly) * cos(2.0 * mean_longitude) -
+      0.5 * y * y * sin(4.0 * mean_longitude) -
+      1.25 * eccentricity * eccentricity * sin(2.0 * mean_anomaly);
+
+  return equation * 180.0 / M_PI * 4.0;
+}
+
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
+double calculate_solar_altitude(double hour, double latitude_degrees,
+                                double declination_degrees) {
+  double latitude = latitude_degrees * M_PI / 180.0;
+  double declination = declination_degrees * M_PI / 180.0;
+  double hour_angle = (hour - 12.0) * 15.0 * M_PI / 180.0;
+  double sine_altitude = sin(latitude) * sin(declination) +
+                         cos(latitude) * cos(declination) * cos(hour_angle);
+
+  if (sine_altitude > 1.0)
+    sine_altitude = 1.0;
+  if (sine_altitude < -1.0)
+    sine_altitude = -1.0;
+
+  return asin(sine_altitude) * 180.0 / M_PI;
+}
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+double calculate_solar_event_hour(CalendarDate date, double latitude_degrees,
+                                  double longitude_degrees,
+                                  double declination_degrees,
+                                  double altitude_threshold_degrees,
+                                  double timezone_offset_minutes,
+                                  int is_sunrise) {
+  double latitude = latitude_degrees * M_PI / 180.0;
+  double declination = declination_degrees * M_PI / 180.0;
+  double threshold = altitude_threshold_degrees * M_PI / 180.0;
+  double cos_hour_angle =
+      (sin(threshold) - sin(latitude) * sin(declination)) /
+      (cos(latitude) * cos(declination));
+
+  if (cos_hour_angle > 1.0)
+    cos_hour_angle = 1.0;
+  if (cos_hour_angle < -1.0)
+    cos_hour_angle = -1.0;
+
+  double hour_angle_degrees = acos(cos_hour_angle) * 180.0 / M_PI;
+  double solar_noon_minutes =
+      720.0 - calculate_equation_of_time_minutes(date) -
+      4.0 * longitude_degrees + timezone_offset_minutes;
+  double event_minutes =
+      solar_noon_minutes + (is_sunrise ? -4.0 : 4.0) * hour_angle_degrees;
+
+  return event_minutes / 60.0;
+}
+// NOLINTEND(bugprone-easily-swappable-parameters)
+
 // ==========================================================================
 // FONCTION DE CALCUL DE DUREE DU JOUR
 // ==========================================================================

@@ -20,7 +20,10 @@ typedef enum {
   APPLICATION_WITH_INVALID_LOGGER_CONFIG,
   APPLICATION_WITH_WARN_LOGGER_CONFIG,
   APPLICATION_WITH_HELP,
-  APPLICATION_WITH_UNKNOWN_OPTION
+  APPLICATION_WITH_UNKNOWN_OPTION,
+  APPLICATION_WITH_MISSING_OPTION_VALUE,
+  APPLICATION_WITH_MISSING_CONFIG_FILE,
+  APPLICATION_WITH_CSV_OPEN_FAILURE
 } ApplicationInvocation;
 
 static const char *application_path;
@@ -54,6 +57,9 @@ static int run_application_with_config(const char *config_contents,
   char logger_path[PATH_BUFFER_SIZE];
   char output_path[PATH_BUFFER_SIZE];
   char csv_path[PATH_BUFFER_SIZE];
+  char missing_data_path[PATH_BUFFER_SIZE];
+  char missing_csv_directory[PATH_BUFFER_SIZE];
+  char missing_csv_path[PATH_BUFFER_SIZE];
   char resolved_application_path[PATH_BUFFER_SIZE];
   int execution_succeeded = 0;
 
@@ -65,10 +71,16 @@ static int run_application_with_config(const char *config_contents,
                        "solar_duration.dat") ||
       !build_temp_path(logger_path, sizeof(logger_path), config_directory,
                        "solar_duration.cfg") ||
+      !build_temp_path(missing_data_path, sizeof(missing_data_path),
+               config_directory, "missing.dat") ||
       !build_temp_path(output_path, sizeof(output_path), temporary_directory,
                        "application.log") ||
       !build_temp_path(csv_path, sizeof(csv_path), temporary_directory,
-                       "results.csv")) {
+               "results.csv") ||
+      !build_temp_path(missing_csv_directory, sizeof(missing_csv_directory),
+               temporary_directory, "missing-output") ||
+      !build_temp_path(missing_csv_path, sizeof(missing_csv_path),
+               missing_csv_directory, "results.csv")) {
     if (temporary_directory) {
       rmdir(temporary_directory);
     }
@@ -124,6 +136,19 @@ static int run_application_with_config(const char *config_contents,
     if (invocation == APPLICATION_WITH_UNKNOWN_OPTION) {
       execl(resolved_application_path, resolved_application_path, "--unknown",
             "value", (char *)NULL);
+    }
+    if (invocation == APPLICATION_WITH_MISSING_OPTION_VALUE) {
+      execl(resolved_application_path, resolved_application_path, "--config",
+            (char *)NULL);
+    }
+    if (invocation == APPLICATION_WITH_MISSING_CONFIG_FILE) {
+      execl(resolved_application_path, resolved_application_path, "--config",
+            missing_data_path, "--logger-config", logger_path, (char *)NULL);
+    }
+    if (invocation == APPLICATION_WITH_CSV_OPEN_FAILURE) {
+      execl(resolved_application_path, resolved_application_path, "--config",
+            data_path, "--logger-config", logger_path, "--csv",
+            missing_csv_path, (char *)NULL);
     }
     execl(resolved_application_path, resolved_application_path, "--config",
           data_path, "--logger-config", logger_path, "--csv", csv_path,
@@ -430,6 +455,148 @@ static TestResult test_application_rejects_unknown_option(void) {
                           "unknown command-line option is rejected with usage");
 }
 
+              /* Vérifie qu'une option sans valeur affiche l'usage et échoue. */
+              static TestResult test_application_rejects_option_without_value(void) {
+                /* Given */
+                const char *config_contents = "";
+                char output[OUTPUT_BUFFER_SIZE];
+                char csv_output[OUTPUT_BUFFER_SIZE];
+                int exit_code = -1;
+
+                /* When */
+                int execution_succeeded = run_application_with_config(
+                  config_contents, output, sizeof(output), csv_output, sizeof(csv_output),
+                  &exit_code, APPLICATION_WITH_MISSING_OPTION_VALUE);
+
+                /* Then */
+                return assert_condition(execution_succeeded && exit_code == 2 &&
+                              strstr(output, "Usage:") != NULL,
+                            "option without a value is rejected with usage");
+              }
+
+              /* Vérifie que l'application rapporte une configuration absente. */
+              static TestResult test_application_reports_missing_config_file(void) {
+                /* Given */
+                const char *config_contents = "";
+                char output[OUTPUT_BUFFER_SIZE];
+                char csv_output[OUTPUT_BUFFER_SIZE];
+                int exit_code = -1;
+
+                /* When */
+                int execution_succeeded = run_application_with_config(
+                  config_contents, output, sizeof(output), csv_output, sizeof(csv_output),
+                  &exit_code, APPLICATION_WITH_MISSING_CONFIG_FILE);
+
+                /* Then */
+                return assert_condition(execution_succeeded && exit_code != 0 &&
+                              strstr(output, "Impossible de trouver") != NULL,
+                            "missing config file is reported to the user");
+              }
+
+              /* Vérifie que l'application traite une configuration incomplète. */
+              static TestResult test_application_reports_incomplete_config(void) {
+                /* Given */
+                const char *config_contents = "jour_debut = 1\n";
+                char output[OUTPUT_BUFFER_SIZE];
+                char csv_output[OUTPUT_BUFFER_SIZE];
+                int exit_code = -1;
+
+                /* When */
+                int execution_succeeded = run_application_with_config(
+                  config_contents, output, sizeof(output), csv_output, sizeof(csv_output),
+                  &exit_code, APPLICATION_WITH_FILE_OPTIONS);
+
+                /* Then */
+                return assert_condition(execution_succeeded && exit_code != 0 &&
+                              strstr(output, "Configuration incomplète") != NULL,
+                            "incomplete config is reported to the user");
+              }
+
+              /* Vérifie que l'application rapporte une valeur de configuration non convertible. */
+              static TestResult test_application_reports_config_conversion_failure(void) {
+                /* Given */
+                const char *config_contents = "jour_debut = 1\n"
+                              "mois_debut = 1\n"
+                              "annee_debut = 2026\n"
+                              "jour_fin = 1\n"
+                              "mois_fin = 1\n"
+                              "annee_fin = 2026\n"
+                              "latitude = 48 deg 51 min 24 sec Nord\n"
+                              "mode_solaire = invalide\n";
+                char output[OUTPUT_BUFFER_SIZE];
+                char csv_output[OUTPUT_BUFFER_SIZE];
+                int exit_code = -1;
+
+                /* When */
+                int execution_succeeded = run_application_with_config(
+                  config_contents, output, sizeof(output), csv_output, sizeof(csv_output),
+                  &exit_code, APPLICATION_WITH_FILE_OPTIONS);
+
+                /* Then */
+                return assert_condition(execution_succeeded && exit_code != 0 &&
+                              strstr(output, "Erreur de conversion") != NULL,
+                            "invalid config value is reported as conversion failure");
+              }
+
+              /* Vérifie que l'application échoue proprement si le CSV ne peut être créé. */
+              static TestResult test_application_reports_csv_open_failure(void) {
+                /* Given */
+                const char *config_contents = "jour_debut = 1\n"
+                              "mois_debut = 1\n"
+                              "annee_debut = 2026\n"
+                              "jour_fin = 1\n"
+                              "mois_fin = 1\n"
+                              "annee_fin = 2026\n"
+                              "latitude = 48 deg 51 min 24 sec Nord\n"
+                              "mode_solaire = 2\n";
+                char output[OUTPUT_BUFFER_SIZE];
+                char csv_output[OUTPUT_BUFFER_SIZE];
+                int exit_code = -1;
+
+                /* When */
+                int execution_succeeded = run_application_with_config(
+                  config_contents, output, sizeof(output), csv_output, sizeof(csv_output),
+                  &exit_code, APPLICATION_WITH_CSV_OPEN_FAILURE);
+
+                /* Then */
+                return assert_condition(execution_succeeded && exit_code != 0 &&
+                              strstr(output, "Impossible de créer le fichier CSV") != NULL,
+                            "CSV creation failure is reported to the user");
+              }
+
+              /* Vérifie que les deux autres modèles solaires sont annoncés et simulés. */
+              static TestResult test_application_runs_sinusoidal_and_meeus_models(void) {
+                /* Given */
+                const char *model_configs[] = {
+                  "jour_debut = 1\nmois_debut = 1\nannee_debut = 2026\n"
+                  "jour_fin = 1\nmois_fin = 1\nannee_fin = 2026\n"
+                  "latitude = 48 deg 51 min 24 sec Nord\nmode_solaire = 1\n",
+                  "jour_debut = 1\nmois_debut = 1\nannee_debut = 2026\n"
+                  "jour_fin = 1\nmois_fin = 1\nannee_fin = 2026\n"
+                  "latitude = 48 deg 51 min 24 sec Nord\nmode_solaire = 3\n"};
+                const char *expected_model_messages[] = {
+                  "Utilisation du Mode SINUSOIDAL.", "Utilisation du Mode MEEUS."};
+                char output[OUTPUT_BUFFER_SIZE];
+                char csv_output[OUTPUT_BUFFER_SIZE];
+                int exit_code = -1;
+
+                /* When */
+                for (size_t index = 0; index < 2; index++) {
+                int execution_succeeded = run_application_with_config(
+                  model_configs[index], output, sizeof(output), csv_output,
+                  sizeof(csv_output), &exit_code, APPLICATION_WITH_FILE_OPTIONS);
+                if (!execution_succeeded || exit_code != 0 ||
+                  strstr(output, expected_model_messages[index]) == NULL ||
+                  strstr(csv_output, "01/01/2026,") == NULL) {
+                  return assert_condition(0,
+                              "application runs the selected solar model");
+                }
+                }
+
+                /* Then */
+                return assert_condition(1, "application runs the selected solar models");
+              }
+
 static const TestCase test_cases[] = {
     {"test_application_runs_cross_year_period",
      test_application_runs_cross_year_period},
@@ -449,6 +616,18 @@ static const TestCase test_cases[] = {
      test_application_help_exits_successfully},
     {"test_application_rejects_unknown_option",
      test_application_rejects_unknown_option},
+    {"test_application_rejects_option_without_value",
+     test_application_rejects_option_without_value},
+    {"test_application_reports_missing_config_file",
+     test_application_reports_missing_config_file},
+    {"test_application_reports_incomplete_config",
+     test_application_reports_incomplete_config},
+    {"test_application_reports_config_conversion_failure",
+     test_application_reports_config_conversion_failure},
+    {"test_application_reports_csv_open_failure",
+     test_application_reports_csv_open_failure},
+    {"test_application_runs_sinusoidal_and_meeus_models",
+     test_application_runs_sinusoidal_and_meeus_models},
 };
 
 int main(int argc, const char *argv[]) {
