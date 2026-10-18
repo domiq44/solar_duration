@@ -393,6 +393,32 @@ static TestResult test_solar_events_follow_timezone_offset(void) {
                           "solar events shift with the civil timezone offset");
 }
 
+/* Vérifie qu'aucun horaire artificiel n'est produit sans franchissement du seuil. */
+static TestResult test_solar_events_are_nan_when_threshold_is_never_crossed(void) {
+  /* Given */
+  const CalendarDate summer_date = {.jour = 21, .mois = 6, .annee = 2025};
+  const CalendarDate winter_date = {.jour = 21, .mois = 12, .annee = 2025};
+  const double latitude = 80.0;
+  const double threshold = -0.833;
+
+  /* When */
+  double polar_summer_sunrise = calculate_solar_event_hour(
+      summer_date, latitude, 0.0, 23.45, threshold, 0.0, 1);
+  double polar_summer_sunset = calculate_solar_event_hour(
+      summer_date, latitude, 0.0, 23.45, threshold, 0.0, 0);
+  double polar_winter_sunrise = calculate_solar_event_hour(
+      winter_date, latitude, 0.0, -23.45, threshold, 0.0, 1);
+  double polar_winter_sunset = calculate_solar_event_hour(
+      winter_date, latitude, 0.0, -23.45, threshold, 0.0, 0);
+
+  /* Then */
+  return assert_condition(isnan(polar_summer_sunrise) &&
+                              isnan(polar_summer_sunset) &&
+                              isnan(polar_winter_sunrise) &&
+                              isnan(polar_winter_sunset),
+                          "solar event times are undefined without threshold crossings");
+}
+
 /* Vérifie que l'API web sélectionne les modèles C et rejette les entrées invalides. */
 static TestResult test_web_api_declination_selects_models_and_rejects_invalid_input(void) {
   /* Given */
@@ -472,6 +498,57 @@ static TestResult test_web_api_exposes_altitude_and_solar_event(void) {
       "web API exposes C altitude and validates solar event dates");
 }
 
+/* Vérifie les bornes numériques des fonctions altitude et événement de l'API web. */
+static TestResult test_web_api_rejects_invalid_altitude_and_event_inputs(void) {
+  /* Given */
+  const int year = 2024;
+  const int month = 3;
+  const int day = 20;
+  const double valid_latitude = 48.0;
+  const double valid_longitude = 2.0;
+  const double valid_declination = 0.0;
+  const double valid_threshold = -0.833;
+  const double valid_timezone = 60.0;
+
+  /* When */
+  double invalid_altitude_hour =
+      solar_web_altitude(25.0, valid_latitude, valid_declination);
+  double invalid_altitude_latitude =
+      solar_web_altitude(12.0, 91.0, valid_declination);
+  double invalid_altitude_declination =
+      solar_web_altitude(12.0, valid_latitude, NAN);
+  double invalid_event_year = solar_web_event_hour(
+      1800, month, day, valid_latitude, valid_longitude, valid_declination,
+      valid_threshold, valid_timezone, 1);
+  double invalid_event_latitude = solar_web_event_hour(
+      year, month, day, 91.0, valid_longitude, valid_declination,
+      valid_threshold, valid_timezone, 1);
+  double invalid_event_longitude = solar_web_event_hour(
+      year, month, day, valid_latitude, 181.0, valid_declination,
+      valid_threshold, valid_timezone, 1);
+  double invalid_event_declination = solar_web_event_hour(
+      year, month, day, valid_latitude, valid_longitude, 91.0,
+      valid_threshold, valid_timezone, 1);
+  double invalid_event_threshold = solar_web_event_hour(
+      year, month, day, valid_latitude, valid_longitude, valid_declination,
+      91.0, valid_timezone, 1);
+  double invalid_event_timezone = solar_web_event_hour(
+      year, month, day, valid_latitude, valid_longitude, valid_declination,
+      valid_threshold, NAN, 1);
+  double invalid_event_kind = solar_web_event_hour(
+      year, month, day, valid_latitude, valid_longitude, valid_declination,
+      valid_threshold, valid_timezone, 2);
+
+  /* Then */
+  return assert_condition(
+      isnan(invalid_altitude_hour) && isnan(invalid_altitude_latitude) &&
+          isnan(invalid_altitude_declination) && isnan(invalid_event_year) &&
+          isnan(invalid_event_latitude) && isnan(invalid_event_longitude) &&
+          isnan(invalid_event_declination) && isnan(invalid_event_threshold) &&
+          isnan(invalid_event_timezone) && isnan(invalid_event_kind),
+      "web API rejects non-finite and out-of-range altitude/event inputs");
+}
+
 static const TestCase test_cases[] = {
     {"test_sinusoidal_declination_tracks_seasonal_cycle",
      test_sinusoidal_declination_tracks_seasonal_cycle},
@@ -507,12 +584,16 @@ static const TestCase test_cases[] = {
      test_solar_altitude_reaches_zenith_at_equatorial_noon},
     {"test_solar_events_follow_timezone_offset",
      test_solar_events_follow_timezone_offset},
+    {"test_solar_events_are_nan_when_threshold_is_never_crossed",
+     test_solar_events_are_nan_when_threshold_is_never_crossed},
     {"test_web_api_declination_selects_models_and_rejects_invalid_input",
      test_web_api_declination_selects_models_and_rejects_invalid_input},
     {"test_web_api_day_duration_validates_observation",
      test_web_api_day_duration_validates_observation},
     {"test_web_api_exposes_altitude_and_solar_event",
      test_web_api_exposes_altitude_and_solar_event},
+    {"test_web_api_rejects_invalid_altitude_and_event_inputs",
+     test_web_api_rejects_invalid_altitude_and_event_inputs},
 };
 
 /* Exécuteur */

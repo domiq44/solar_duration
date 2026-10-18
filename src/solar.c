@@ -200,6 +200,13 @@ double calculate_solar_event_hour(CalendarDate date, double latitude_degrees,
                                   double altitude_threshold_degrees,
                                   double timezone_offset_minutes,
                                   int is_sunrise) {
+  if (!isfinite(latitude_degrees) || fabs(latitude_degrees) >= 90.0 ||
+      !isfinite(longitude_degrees) || !isfinite(declination_degrees) ||
+      !isfinite(altitude_threshold_degrees) ||
+      !isfinite(timezone_offset_minutes)) {
+    return NAN;
+  }
+
   double latitude = latitude_degrees * M_PI / 180.0;
   double declination = declination_degrees * M_PI / 180.0;
   double threshold = altitude_threshold_degrees * M_PI / 180.0;
@@ -207,6 +214,10 @@ double calculate_solar_event_hour(CalendarDate date, double latitude_degrees,
       (sin(threshold) - sin(latitude) * sin(declination)) /
       (cos(latitude) * cos(declination));
 
+  if (!isfinite(cos_hour_angle) || cos_hour_angle > 1.0 + 1e-12 ||
+      cos_hour_angle < -1.0 - 1e-12) {
+    return NAN;
+  }
   if (cos_hour_angle > 1.0)
     cos_hour_angle = 1.0;
   if (cos_hour_angle < -1.0)

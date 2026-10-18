@@ -69,9 +69,11 @@ conserve l'interface, la validation des champs, la recherche de villes et
 l'utilisation des règles de fuseau fournies par le navigateur. Le calcul porte
 sur une date unique, avec Meeus sélectionné par défaut.
 
-Ouvrir [`web/index.html`](web/index.html) dans un navigateur. La page fonctionne
-sans compilation, serveur ni dépendance externe. Elle calcule la durée du jour
-pour une date unique, avec Meeus sélectionné par défaut.
+Une fois le module compilé et le serveur HTTP lancé, ouvrir
+`http://localhost:8000`. La page calcule la durée du jour pour une date unique,
+avec Meeus sélectionné par défaut. Le module `solar_core.mjs` et son fichier
+WASM sont générés dans `web/` et ne sont pas suivis par Git; une ouverture
+directe avec `file://` ne fonctionne donc pas.
 
 La recherche propose les villes intégrées à la page et renseigne leurs
 coordonnées et leur fuseau; les coordonnées restent modifiables. Le bouton

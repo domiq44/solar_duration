@@ -12,6 +12,10 @@
 #include "solar.h"
 #include "web_api.h"
 
+static int is_finite_within(double value, double minimum, double maximum) {
+  return isfinite(value) && value >= minimum && value <= maximum;
+}
+
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
 WEB_API_EXPORT double solar_web_declination(int model, int year, int month,
                                              int day) {
@@ -54,6 +58,12 @@ WEB_API_EXPORT double solar_web_day_duration(int model, int year, int month,
 
 WEB_API_EXPORT double solar_web_altitude(double hour, double latitude_degrees,
                                           double declination_degrees) {
+  if (!is_finite_within(hour, 0.0, 24.0) ||
+      !is_finite_within(latitude_degrees, MIN_LATITUDE, MAX_LATITUDE) ||
+      !is_finite_within(declination_degrees, -90.0, 90.0)) {
+    return NAN;
+  }
+
   return calculate_solar_altitude(hour, latitude_degrees,
                                   declination_degrees);
 }
@@ -64,7 +74,15 @@ WEB_API_EXPORT double solar_web_event_hour(
     double altitude_threshold_degrees, double timezone_offset_minutes,
     int is_sunrise) {
   CalendarDate date = {.jour = day, .mois = month, .annee = year};
-  if (!is_date_valid(date)) {
+  if (year < MIN_YEAR || year > MAX_YEAR || !is_date_valid(date) ||
+      !is_finite_within(latitude_degrees, MIN_LATITUDE, MAX_LATITUDE) ||
+      !is_finite_within(longitude_degrees, -180.0, 180.0) ||
+      !is_finite_within(declination_degrees, -90.0, 90.0) ||
+      !is_finite_within(altitude_threshold_degrees,
+                        MIN_SOLAR_ALTITUDE_DEGREES,
+                        MAX_SOLAR_ALTITUDE_DEGREES) ||
+      !is_finite_within(timezone_offset_minutes, -1440.0, 1440.0) ||
+      (is_sunrise != 0 && is_sunrise != 1)) {
     return NAN;
   }
 
