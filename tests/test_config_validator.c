@@ -1,3 +1,6 @@
+#include <math.h>
+
+#include "config.h"
 #include "config_reader.h"
 #include "config_validator.h"
 #include "date.h"
@@ -312,6 +315,40 @@ static TestResult test_latitudes_outside_supported_range_are_rejected(void) {
       "latitudes above 90 degrees in either hemisphere are rejected");
 }
 
+/* Vérifie qu'une latitude non finie est rejetée par la validation finale. */
+static TestResult test_non_finite_latitude_is_rejected(void) {
+  /* Given */
+  RawConfig raw = setup_valid_raw_config();
+  FinalConfig final;
+  const int expected_parse_status = READ_SUCCESS;
+
+  /* When */
+  int parse_status = parse_and_validate_config(&raw, &final);
+  final.latitude = NAN;
+
+  /* Then */
+  return assert_condition(parse_status == expected_parse_status &&
+                              !is_config_fully_valid(&final),
+                          "a non-finite latitude is rejected");
+}
+
+/* Vérifie que le pointeur de déclinaison correspond au mode choisi. */
+static TestResult test_declination_function_must_match_mode(void) {
+  /* Given */
+  RawConfig raw = setup_valid_raw_config();
+  FinalConfig final;
+  const int expected_parse_status = READ_SUCCESS;
+
+  /* When */
+  int parse_status = parse_and_validate_config(&raw, &final);
+  final.mode_declinaison = MODE_MEEUS;
+
+  /* Then */
+  return assert_condition(parse_status == expected_parse_status &&
+                              !is_config_fully_valid(&final),
+                          "declination function must match the selected mode");
+}
+
 /* Vérifie qu'une date de début postérieure à la date de fin échoue à la validation. */
 static TestResult test_reversed_dates_fail_final_validation(void) {
   /* Given */
@@ -460,6 +497,10 @@ static const TestCase test_cases[] = {
      test_end_year_above_supported_range_is_rejected},
     {"test_latitudes_outside_supported_range_are_rejected",
      test_latitudes_outside_supported_range_are_rejected},
+    {"test_non_finite_latitude_is_rejected",
+     test_non_finite_latitude_is_rejected},
+    {"test_declination_function_must_match_mode",
+     test_declination_function_must_match_mode},
     {"test_reversed_dates_fail_final_validation",
      test_reversed_dates_fail_final_validation},
     {"test_time_range_rejects_invalid_dates",

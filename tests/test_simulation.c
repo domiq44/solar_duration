@@ -51,14 +51,6 @@ static int finish_stdout_capture(StdoutCapture *capture, char *output,
   return read_succeeded && restore_succeeded;
 }
 
-static double declination_near_second_rollover(SolarDate date) {
-  (void)date;
-  const double pi = acos(-1.0);
-  const double target_duration_hours = 12.0 + 34.0 / 60.0 + 59.75 / 3600.0;
-  const double hour_angle = target_duration_hours * pi / 24.0;
-  return atan(-cos(hour_angle)) * 180.0 / pi;
-}
-
 /* Vérifie que la simulation rejette une configuration finale NULL. */
 static TestResult test_simulation_rejects_null_configuration(void) {
   /* Given */
@@ -145,6 +137,12 @@ static TestResult test_simulation_includes_both_range_endpoints(void) {
 /* Vérifie que l'arrondi à 60 secondes entraîne une retenue sur la minute suivante. */
 static TestResult test_simulation_carries_rounded_seconds(void) {
   /* Given */
+  const double pi = acos(-1.0);
+  const double target_duration_hours = 12.0 + 34.0 / 60.0 + 59.75 / 3600.0;
+  const SolarDate solar_date = {.jour_ordinal = 1, .annee = 2026};
+  const double declination =
+      calculate_spencer_declination(solar_date) * pi / 180.0;
+  const double target_hour_angle = target_duration_hours * pi / 24.0;
   FinalConfig final = {
       .jour_debut = 1,
       .mois_debut = 1,
@@ -152,9 +150,11 @@ static TestResult test_simulation_carries_rounded_seconds(void) {
       .jour_fin = 1,
       .mois_fin = 1,
       .annee_fin = 2026,
-      .latitude = 45.0,
+      .latitude = 0.0,
       .mode_declinaison = MODE_SPENCER,
-      .declination_func = declination_near_second_rollover,
+      .declination_func = calculate_spencer_declination,
+      .altitude_solaire_seuil_degres =
+          asin(cos(target_hour_angle) * cos(declination)) * 180.0 / pi,
   };
   StdoutCapture capture;
   char output[512];

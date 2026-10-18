@@ -46,23 +46,23 @@ static bool parse_double_value(const char *value, double *result) {
   return true;
 }
 
-// Initialise les pointeurs de fonctions dans FinalConfig.
-static void initialize_config_functions(FinalConfig *final) {
-  final->declination_func = NULL;
-  switch (final->mode_declinaison) {
+static DeclinationFunc declination_function_for_mode(int mode) {
+  switch (mode) {
   case MODE_SINUSOIDAL:
-    final->declination_func = calculate_sinusoidal_declination;
-    break;
+    return calculate_sinusoidal_declination;
   case MODE_SPENCER:
-    final->declination_func = calculate_spencer_declination;
-    break;
+    return calculate_spencer_declination;
   case MODE_MEEUS:
-    final->declination_func = calculate_meeus_declination;
-    break;
+    return calculate_meeus_declination;
   default:
-    // L'erreur sera capturée par is_config_fully_valid
-    break;
+    return NULL;
   }
+}
+
+// Initialise le pointeur de fonction dans FinalConfig.
+static void initialize_config_functions(FinalConfig *final) {
+  final->declination_func =
+      declination_function_for_mode(final->mode_declinaison);
 }
 
 // ==========================================================================
@@ -200,7 +200,8 @@ bool is_config_fully_valid(const FinalConfig *final) {
     return false;
   }
   // 2. Validation Latitude
-  if (final->latitude < MIN_LATITUDE || final->latitude > MAX_LATITUDE) {
+  if (!isfinite(final->latitude) || final->latitude < MIN_LATITUDE ||
+      final->latitude > MAX_LATITUDE) {
     log_error("ERREUR DE DONNEES: Latitude hors plage valide.");
     return false;
   }
@@ -242,10 +243,11 @@ bool is_config_fully_valid(const FinalConfig *final) {
     return false;
   }
 
-  // 6. Validation du pointeur fonction déclinaison
-  if (final->declination_func == NULL) {
+  // 6. Validation de la correspondance mode / fonction de déclinaison
+  if (final->declination_func !=
+      declination_function_for_mode(final->mode_declinaison)) {
     log_error(
-        "ERREUR INTERNE: Pointeur de fonction déclinaison non initialisé. "
+        "ERREUR INTERNE: Pointeur de fonction déclinaison incohérent. "
         "Mode de déclinaison: %d",
         final->mode_declinaison);
     return false;
