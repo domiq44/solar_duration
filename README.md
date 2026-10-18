@@ -1,5 +1,9 @@
 # Simulateur de durée du jour
 
+> **Démo web** : [ouvrir le calculateur](https://domiq44.github.io/solar_duration/)
+> après le premier déploiement GitHub Pages. Pour le lancer localement ou
+> comprendre ses réglages, voir [Page web statique](#page-web-statique).
+
 Petit programme en C qui estime la durée d'ensoleillement pour chaque jour
 d'une période et d'une latitude données. La période peut traverser une ou
 plusieurs années. Trois modèles de déclinaison solaire sont disponibles.
@@ -61,6 +65,13 @@ bouton « Réinitialiser les réglages » restaure les valeurs initiales. Rien
 n'est envoyé à un serveur. Selon le navigateur, le stockage local peut être
 restreint pour les pages ouvertes directement en `file://`; dans ce cas, le
 calcul reste disponible, mais les réglages ne sont pas mémorisés.
+
+Pour publier une démo, le workflow `.github/workflows/pages.yml` déploie le
+dossier `web/` sur GitHub Pages à chaque push sur `main` et peut aussi être
+lancé manuellement. Dans les paramètres du dépôt, choisir **Settings > Pages >
+Build and deployment > Source: GitHub Actions**. Après le premier déploiement,
+GitHub affiche l'URL publique dans l'environnement `github-pages` de l'onglet
+Actions.
 
 Les villes utilisent des coordonnées représentatives de leur centre. Les
 horaires sont des estimations géométriques et ne tiennent pas compte du relief,
