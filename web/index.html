@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f6f1">
+    <title>Durée du jour | Solar Duration</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topline">
+        <div class="wordmark"><span class="mark" aria-hidden="true">◒</span> Solar Duration</div>
+        <span class="range-note">Dates disponibles : 1900 à 3000</span>
+      </header>
+      <section class="heading" aria-labelledby="page-title">
+        <p class="eyebrow">Calcul astronomique</p>
+        <h1 id="page-title">Durée du jour</h1>
+      </section>
+      <section class="workspace" aria-label="Calculateur de durée du jour">
+        <form class="controls" id="calculator-form">
+          <h2 class="section-title">Paramètres</h2>
+          <div class="field">
+            <div class="label-row"><label for="date-input">Date</label><span class="field-hint">Jour local</span></div>
+            <div class="date-row">
+              <input id="date-input" name="date" type="date" min="1900-01-01" max="3000-12-31" required>
+              <button class="button" id="today-button" type="button">Aujourd'hui</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label-row"><label for="latitude-input">Latitude</label><span class="field-hint">Nord + · Sud −</span></div>
+            <div class="latitude-row">
+              <div class="latitude-number">
+                <input id="latitude-input" name="latitude" type="number" min="-90" max="90" step="0.01" value="47.2967" inputmode="decimal" required aria-describedby="latitude-range-labels">
+                <span class="unit" aria-hidden="true">°</span>
+              </div>
+              <button class="button" id="location-button" type="button" aria-label="Utiliser ma position">⌖ Position</button>
+            </div>
+            <input id="latitude-range" type="range" min="-90" max="90" step="0.1" value="47.3" aria-label="Régler la latitude">
+            <div class="range-labels" id="latitude-range-labels"><span>90° S</span><span>Équateur</span><span>90° N</span></div>
+          </div>
+          <div class="field">
+            <div class="label-row"><label for="model-select">Modèle solaire</label></div>
+            <div class="select-wrap">
+              <select id="model-select" name="model">
+                <option value="meeus" selected>Meeus · recommandé</option>
+                <option value="spencer">Spencer</option>
+                <option value="sinusoidal">Sinusoïdal</option>
+              </select>
+            </div>
+          </div>
+          <details open>
+            <summary>Altitude solaire seuil</summary>
+            <div class="field threshold-field">
+              <div class="label-row"><label for="threshold-input">Seuil du centre du Soleil</label></div>
+              <div class="threshold-row">
+                <div class="latitude-number">
+                  <input id="threshold-input" name="threshold" type="number" min="-90" max="90" step="0.001" value="-0.833" inputmode="decimal" required>
+                  <span class="unit" aria-hidden="true">°</span>
+                </div>
+                <button class="button" id="threshold-reset" type="button" title="Rétablir −0,833°">Réinitialiser</button>
+              </div>
+              <span class="field-hint threshold-hint">Valeur conventionnelle : −0,833°</span>
+            </div>
+          </details>
+          <p class="status" id="status-message" role="status" aria-live="polite"></p>
+        </form>
+        <section class="results" aria-labelledby="result-heading">
+          <div class="result-top">
+            <div><p class="result-date" id="result-date"></p><h2 class="result-heading" id="result-heading">Durée d’ensoleillement</h2></div>
+            <span class="model-chip" id="model-chip">MEEUS</span>
+          </div>
+          <div class="duration-line" aria-live="polite">
+            <output class="duration-value" id="duration-value">— h — min</output>
+            <span class="duration-unit">au-dessus du seuil</span>
+          </div>
+          <div class="stats" aria-label="Détails du calcul">
+            <div class="stat"><span class="stat-label">Lever estimé</span><span class="stat-value" id="sunrise-value">—</span></div>
+            <div class="stat"><span class="stat-label">Coucher estimé</span><span class="stat-value" id="sunset-value">—</span></div>
+            <div class="stat"><span class="stat-label">Déclinaison</span><span class="stat-value" id="declination-value">—</span></div>
+          </div>
+          <div class="chart-heading"><h2>Hauteur du Soleil</h2><span>Heure solaire locale · estimation</span></div>
+          <div class="chart-wrap"><canvas id="solar-chart" role="img" aria-label="Courbe estimée de la hauteur du Soleil pendant la journée"></canvas></div>
+          <div class="legend" aria-hidden="true">
+            <span class="legend-item"><span class="legend-mark"></span>Hauteur solaire</span>
+            <span class="legend-item"><span class="legend-mark threshold"></span>Seuil choisi</span>
+          </div>
+          <p class="footnote">Estimation géométrique : météo, relief et horizon local ne sont pas modélisés.</p>
+        </section>
+      </section>
+      <footer class="page-footer">
+        <span>Calcul local dans le navigateur · aucune donnée n’est envoyée</span>
+        <span id="latitude-display">Latitude : 47,2967° N</span>
+      </footer>
+    </main>
+  </body>
+</html>
