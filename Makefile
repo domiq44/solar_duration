@@ -93,6 +93,7 @@ CC := gcc
 CFLAGS := -std=c11 -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -Wall -Wextra -Wpedantic -O2 -Iinclude
 LDFLAGS := -lm
 PYTHON_CMD := python3
+WEB_PORT ?= 8000
 NODE_CMD := node
 GCOVR := gcovr
 EMCC := emcc
@@ -111,7 +112,7 @@ CPPCHECK_SOURCES := $(sort $(APP_SOURCES) $(wildcard tests/test_*.c) \
 # CIBLES DE COMPILATION
 # ==========================================================================
 
-.PHONY: all run run_log test test_unit test_integration coverage web_wasm test_web_wasm
+.PHONY: all run run_log run_web test test_unit test_integration coverage web_wasm test_web_wasm
 .PHONY: generate_solar_data plot_duration plot_solar_models plot_latitudes
 .PHONY: plot_duration_heatmap plot_all
 .PHONY: clean format lint cppcheck help
@@ -169,6 +170,10 @@ test_integration: $(APP_EXECUTABLE) $(INTEGRATION_TEST_EXECUTABLE)
 	@./$(INTEGRATION_TEST_EXECUTABLE) ./$(APP_EXECUTABLE)
 
 test: test_unit test_integration
+
+run_web: web_wasm
+	@echo "Serveur web disponible sur http://localhost:$(WEB_PORT) (Ctrl+C pour arrêter)"
+	@$(PYTHON_CMD) -m http.server $(WEB_PORT) --directory web
 
 $(COVERAGE_OBJECT_DIR)/%.o: %.c $(PUBLIC_HEADERS) $(UNIT_TEST_HEADERS)
 	@mkdir -p $(@D)
@@ -333,6 +338,7 @@ help:
 	@echo "  make test_integration      : Exécute le programme avec des configurations isolées."
 	@echo "  make coverage              : Mesure les sources C de production et écrit les rapports dans coverage/."
 	@echo "  make web_wasm              : Compile le noyau C pour le web (Emscripten requis)."
+	@echo "  make run_web               : Compile le noyau et lance le serveur web (port $(WEB_PORT))."
 	@echo "  make test_web_wasm         : Teste le module WebAssembly avec Node.js."
 	@echo "  make generate_solar_data   : Génère le CSV de comparaison des modèles dans $(OUTPUT_DIR)/."
 	@echo ""

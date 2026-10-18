@@ -51,17 +51,37 @@ build/solar_duration --check --config ma_config.dat
 ## Calculateur web
 
 Le calculateur utilise le noyau C compilé en WebAssembly; les formules solaires
-ne sont pas réimplémentées en JavaScript. Pour le construire localement,
-installer Emscripten puis lancer :
+ne sont pas réimplémentées en JavaScript. Pour le construire et le lancer
+localement, installer Emscripten et vérifier que `emcc` est accessible :
 
 ```sh
-make web_wasm
-python3 -m http.server 8000 -d web
+emcc --version
 ```
 
-Puis ouvrir `http://localhost:8000`. Le chargement WebAssembly nécessite une
-origine HTTP(S); ouvrir directement `web/index.html` avec `file://` ne suffit
-pas.
+Si `emcc` est introuvable, installer le SDK en suivant le
+[guide officiel Emscripten](https://emscripten.org/docs/getting_started/downloads.html).
+Sur Linux ou dans WSL, les commandes suivantes installent et activent le SDK
+dans le terminal courant :
+
+```sh
+git clone https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+cd "$HOME/emsdk"
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+```
+
+Dans un nouveau terminal, réexécuter `source "$HOME/emsdk/emsdk_env.sh"`
+avant de lancer la commande Make. Depuis la racine du projet :
+
+```sh
+make run_web
+```
+
+Puis ouvrir `http://localhost:8000`. Arrêter le serveur avec `Ctrl+C` dans le
+terminal. Si le port est déjà utilisé, choisir un autre, par exemple
+`make run_web WEB_PORT=8001`. Le chargement WebAssembly nécessite une origine
+HTTP(S); ouvrir directement `web/index.html` avec `file://` ne suffit pas.
 
 Le navigateur calcule la durée du jour, la déclinaison, l'altitude solaire et
 les heures estimées de lever et de coucher à partir du module C. JavaScript
@@ -157,6 +177,7 @@ les messages de suivi, eux, sont filtrés selon `config/solar_duration.cfg`.
 - `make test_integration` : tester avec des configurations isolées.
 - `make coverage` : mesurer toutes les sources C de production dans `src/` et `tools/`.
 - `make web_wasm` : compiler le noyau C pour le navigateur (Emscripten requis).
+- `make run_web` : compiler le noyau puis servir le calculateur web sur le port 8000.
 - `make test_web_wasm` : tester le module compilé (Node.js requis).
 - `make generate_solar_data` : générer `output/solar_model_comparison.csv`.
 - `make plot_solar_models` : comparer les modèles sur la dernière année.
