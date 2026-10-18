@@ -12,6 +12,11 @@ config/                         fichiers d'entrée suivis par Git
 ├── solar_duration.cfg          niveau de log de l'application
 └── solar_data_generator.cfg     niveau de log du générateur
 
+web/                            calculateur statique suivi par Git
+├── index.html                  structure et contrôles
+├── styles.css                  présentation responsive
+└── app.js                      modèles et calculs côté navigateur
+
 docs/images/                    exemples de graphiques suivis par Git
 ├── solar_duration.png
 ├── solar_model_comparison.png
@@ -33,6 +38,11 @@ build/                          exécutables de l'application et des tests
 
 Les listes ci-dessous détaillent le rôle des entrées et la commande qui produit
 chaque sortie.
+
+Le calculateur dans `web/` se lance en ouvrant `web/index.html`; il ne génère
+pas de fichier dans le dépôt. Ses réglages sont stockés dans le navigateur de
+l'utilisateur, pas dans un fichier de configuration du projet. Le détail de
+son fonctionnement est dans [README.md](../README.md#page-web-statique).
 
 ## Fichiers d'entrée
 

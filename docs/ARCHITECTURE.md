@@ -31,6 +31,20 @@ Les chaînes brutes sont libérées après conversion avec `free_raw_config()`.
 `FinalConfig` contient des valeurs numériques et un pointeur vers la fonction
 de déclinaison choisie. Il ne possède pas de mémoire dynamique.
 
+## Calculateur Web statique
+
+Le dossier `web/` contient une interface indépendante de l'exécutable C :
+`index.html` charge `styles.css` et `app.js`. Les calculs de déclinaison et de
+durée sont effectués dans le navigateur pour une seule date. Une table intégrée
+associe les villes proposées à leurs coordonnées et à leur fuseau IANA; la
+recherche reste hors ligne et les coordonnées peuvent être ajustées.
+
+La durée utilise la latitude, le modèle et le seuil. Les horaires civils
+estimés ajoutent la longitude et l'équation du temps; `Intl.DateTimeFormat`
+applique le décalage du fuseau sélectionné pour la date, y compris le passage
+entre heure standard et heure d'été. Les choix sont persistés dans le
+`localStorage` du navigateur et ne sont pas partagés avec l'application C.
+
 ## Responsabilités des modules
 
 - `main.c` : initialise le logger et orchestre lecture, validation et

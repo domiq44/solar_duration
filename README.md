@@ -42,6 +42,30 @@ ni créer de fichier CSV :
 build/solar_duration --check --config ma_config.dat
 ```
 
+## Page web statique
+
+Ouvrir [`web/index.html`](web/index.html) dans un navigateur. La page fonctionne
+sans compilation, serveur ni dépendance externe. Elle calcule la durée du jour
+pour une date unique, avec Meeus sélectionné par défaut.
+
+La recherche propose les villes intégrées à la page et renseigne leurs
+coordonnées et leur fuseau; les coordonnées restent modifiables. Le bouton
+Position peut utiliser la géolocalisation du navigateur après autorisation.
+La durée du jour dépend de la latitude; les heures civiles estimées de lever et
+de coucher tiennent aussi compte de la longitude, de l'équation du temps et du
+fuseau choisi, notamment des règles CET/CEST selon la date.
+
+Le seuil solaire est modifiable et peut être rétabli à `-0.833°`. La date et
+les autres réglages sont conservés dans le stockage local du navigateur; le
+bouton « Réinitialiser les réglages » restaure les valeurs initiales. Rien
+n'est envoyé à un serveur. Selon le navigateur, le stockage local peut être
+restreint pour les pages ouvertes directement en `file://`; dans ce cas, le
+calcul reste disponible, mais les réglages ne sont pas mémorisés.
+
+Les villes utilisent des coordonnées représentatives de leur centre. Les
+horaires sont des estimations géométriques et ne tiennent pas compte du relief,
+de l'horizon ni des conditions atmosphériques locales.
+
 ## Configuration
 
 Chaque date possède son propre jour, mois et année. Exemple de période qui
