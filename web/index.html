@@ -29,6 +29,13 @@
             </div>
           </div>
           <div class="field">
+            <div class="label-row"><label for="city-input">Ville</label></div>
+            <div class="city-picker">
+              <input id="city-input" type="search" placeholder="Rechercher une ville…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-suggestions">
+              <ul class="city-suggestions" id="city-suggestions" role="listbox" hidden></ul>
+            </div>
+          </div>
+          <div class="field">
             <div class="label-row"><label for="latitude-input">Latitude</label><span class="field-hint">Nord + · Sud −</span></div>
             <div class="latitude-row">
               <div class="latitude-number">
@@ -41,12 +48,34 @@
             <div class="range-labels" id="latitude-range-labels"><span>90° S</span><span>Équateur</span><span>90° N</span></div>
           </div>
           <div class="field">
+            <div class="label-row"><label for="longitude-input">Longitude</label><span class="field-hint">Est + · Ouest −</span></div>
+            <div class="latitude-number">
+              <input id="longitude-input" name="longitude" type="number" min="-180" max="180" step="0.01" value="0" inputmode="decimal" required>
+              <span class="unit" aria-hidden="true">°</span>
+            </div>
+          </div>
+          <div class="field">
             <div class="label-row"><label for="model-select">Modèle solaire</label></div>
             <div class="select-wrap">
               <select id="model-select" name="model">
                 <option value="meeus" selected>Meeus · recommandé</option>
                 <option value="spencer">Spencer</option>
                 <option value="sinusoidal">Sinusoïdal</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label-row"><label for="timezone-select">Fuseau horaire</label></div>
+            <div class="select-wrap">
+              <select id="timezone-select" name="timezone">
+                <option value="Europe/Paris" selected>Europe centrale · CET/CEST</option>
+                <option value="Europe/London">Royaume-Uni · GMT/BST</option>
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">New York · ET</option>
+                <option value="America/Los_Angeles">Los Angeles · PT</option>
+                <option value="Asia/Dubai">Dubaï · GST</option>
+                <option value="Asia/Tokyo">Tokyo · JST</option>
+                <option value="Australia/Sydney">Sydney · AET</option>
               </select>
             </div>
           </div>
@@ -76,11 +105,11 @@
             <span class="duration-unit">au-dessus du seuil</span>
           </div>
           <div class="stats" aria-label="Détails du calcul">
-            <div class="stat"><span class="stat-label">Lever estimé</span><span class="stat-value" id="sunrise-value">—</span></div>
-            <div class="stat"><span class="stat-label">Coucher estimé</span><span class="stat-value" id="sunset-value">—</span></div>
+            <div class="stat"><span class="stat-label">Lever local estimé</span><span class="stat-value" id="sunrise-value">—</span></div>
+            <div class="stat"><span class="stat-label">Coucher local estimé</span><span class="stat-value" id="sunset-value">—</span></div>
             <div class="stat"><span class="stat-label">Déclinaison</span><span class="stat-value" id="declination-value">—</span></div>
           </div>
-          <div class="chart-heading"><h2>Hauteur du Soleil</h2><span>Heure solaire locale · estimation</span></div>
+          <div class="chart-heading"><h2>Hauteur du Soleil</h2><span>Heure solaire · estimation</span></div>
           <div class="chart-wrap"><canvas id="solar-chart" role="img" aria-label="Courbe estimée de la hauteur du Soleil pendant la journée"></canvas></div>
           <div class="legend" aria-hidden="true">
             <span class="legend-item"><span class="legend-mark"></span>Hauteur solaire</span>
@@ -90,8 +119,9 @@
         </section>
       </section>
       <footer class="page-footer">
-        <span>Calcul local dans le navigateur · aucune donnée n’est envoyée</span>
+        <span>Réglages conservés dans ce navigateur · aucune donnée n’est envoyée</span>
         <span id="latitude-display">Latitude : 47,2967° N</span>
+        <button class="button" id="settings-reset" type="button">Réinitialiser les réglages</button>
       </footer>
     </main>
   </body>
